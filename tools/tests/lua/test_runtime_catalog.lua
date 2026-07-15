@@ -167,6 +167,64 @@ assertEqual(cityState.required,1,"city transition is a required, completable tra
 assertEqual(cityState.complete,true,"alternate city entry completes the authored gate step")
 Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionIssues = {} }
 
+-- A path-following step can contain several `goto` points. Reaching or
+-- manually completing the current point must choose the next point without
+-- requiring a guide-step change. Completing the final point manually must
+-- then advance immediately and rebuild navigation for the following step.
+local waypointHistory={}
+local arrivedFirst=false
+ZGV.Navigation={
+  waypoint=nil,
+  IsArrived=function(_,destination) return arrivedFirst and destination and destination.x==.10 end,
+  IsMapTransitionComplete=function() return false end,
+  SetWaypoint=function(self,destination,title)
+    self.waypoint=destination
+    waypointHistory[#waypointHistory+1]={destination=destination,title=title}
+    return true
+  end,
+  ClearWaypoint=function(self) self.waypoint=nil end,
+}
+Runtime.manual={}
+Runtime.waypointGoalKey=nil
+Runtime.currentGuide={id="movement-path",title="Movement path",conditionIssues={},steps={
+  {goals={
+    {action="goto",text="Follow the path",destination={mapKey="Nagrand/0",x=.10,y=.10}},
+    {action="goto",text="Follow the path up",destination={mapKey="Nagrand/0",x=.20,y=.20}},
+  }},
+  {goals={
+    {action="goto",text="Enter the cave",destination={mapKey="Nagrand/0",x=.30,y=.30}},
+  }},
+}}
+Runtime.currentStep=1
+Runtime.lastAdvance=0
+Runtime:UpdateWaypoint()
+assertEqual(waypointHistory[#waypointHistory].destination.x,.10,"first path point is selected")
+arrivedFirst=true
+Runtime:Tick()
+assertEqual(Runtime.currentStep,1,"reaching an intermediate path point keeps its guide step active")
+assertEqual(waypointHistory[#waypointHistory].destination.x,.20,"arrival points navigation at the next path point")
+
+Runtime.manual={}
+Runtime.waypointGoalKey=nil
+Runtime.currentStep=1
+arrivedFirst=false
+Runtime:UpdateWaypoint()
+assert(Runtime:ActivateGoal(1,1),"manual completion accepts the first path point")
+assertEqual(Runtime.currentStep,1,"manual intermediate completion keeps its guide step active")
+assertEqual(waypointHistory[#waypointHistory].destination.x,.20,"manual completion points to the next path point")
+assert(Runtime:ActivateGoal(1,2),"manual completion accepts the final path point")
+assertEqual(Runtime.currentStep,2,"manual final path completion advances immediately")
+assertEqual(waypointHistory[#waypointHistory].destination.x,.30,"manual final completion points to the next guide step")
+ZGV.Navigation={
+  IsArrived=function() return false end,
+  IsMapTransitionComplete=function(_,transition)
+    return transition and transition.kind=="enter" and transition.mapKey=="Stormwind City/0"
+  end,
+  SetWaypoint=function() return true end,
+  ClearWaypoint=function() end,
+}
+Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionIssues = {} }
+
 -- Manual Next must honour conditional branch order instead of forcing the
 -- first retry label.  A historical quest can be absent from both the log and
 -- a private-server completion snapshot, so a non-active Terokkar quest takes
