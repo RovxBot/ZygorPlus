@@ -9,7 +9,7 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parent
-ADDON = REPO / "ZygorGuidesViewerNew" / "ZygorGuidesViewer"
+ADDON = REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer"
 
 
 class GoldAppraiserTests(unittest.TestCase):
@@ -41,6 +41,7 @@ class GoldAppraiserTests(unittest.TestCase):
         self.assertNotIn("PickupContainerItem", model + ui)
         self.assertNotIn("PickupItem", model + ui)
 
+    @unittest.skipUnless((REPO / "ZygorGuidesViewerClassicTBCAnniv").is_dir(), "requires the local Classic/TBC reference corpus")
     def test_every_gold_source_has_a_concrete_replacement(self) -> None:
         manifest = json.loads((TOOLS / "port_dispositions.json").read_text(encoding="utf-8"))
         mapped: dict[str, dict[str, object]] = {}

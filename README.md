@@ -1,21 +1,25 @@
 # ZygorPlus — WoW 3.3.5a guide viewer port
 
-ZygorPlus is a development port of the Zygor Guides Viewer experience for  World of Warcraft 3.3.5a client (build 12340). The deployable bundle provides the viewer plus Common, Alliance, Horde, and legacy talent settings-bridge addons.
+ZygorPlus is a guide-viewer port for World of Warcraft 3.3.5a (build 12340).
+Each release contains the viewer plus Common, Alliance, Horde, and legacy
+talent-settings bridge addons.
 
 ## Installation
 
-1. Download the latest release from [GitHub](
-2. Copy all folders into your WoW 3.3.5a `Interface/AddOns` directory.
-    - ZygorGuidesViewer
-    - ZygorGuidesViewer_GuidesAlliance
-    - ZygorGuidesViewer_GuidesHorde
-    - ZygorGuidesViewer_GuidesCommon
-    - ZygorTalentAdvisor
+1. Download the latest ZIP from the [GitHub Releases page](https://github.com/RovxBot/ZygorPlus/releases).
+2. Extract all five folders into your WoW 3.3.5a `Interface/AddOns` directory:
+
+   - `ZygorGuidesViewer`
+   - `ZygorGuidesViewer_GuidesAlliance`
+   - `ZygorGuidesViewer_GuidesHorde`
+   - `ZygorGuidesViewer_GuidesCommon`
+   - `ZygorTalentAdvisor`
 
 ## Development
 
-This backport is a work in progress. There will be many changes to the codebase as the project continues. You can contribute by submitting pull requests or reporting issues on the [GitHub repository](
+This backport is actively developed. You can contribute through pull requests
+or issues in the [GitHub repository](https://github.com/RovxBot/ZygorPlus).
 
+![Zygor Viewer](Screenshots/Viewer.png)
 
-
-
+![Zygor Menu](Screenshots/Menu.png)

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "source_root": "ZygorGuidesViewerClassicTBCAnniv",
-  "bundle_root": "ZygorGuidesViewerNew",
+  "bundle_root": "ZygorGuidesViewer",
   "expected_source_files": 864,
   "target_roots": [
     "ZygorGuidesViewer",

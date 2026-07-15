@@ -43,7 +43,7 @@ function ZGV:LogInfo() end
 function ZGV:LogError(_, _, message) error(message, 2) end
 UnitFactionGroup=function() return "Alliance" end
 
-dofile(repo.."/ZygorGuidesViewerNew/ZygorGuidesViewer/Navigation.lua")
+dofile(repo.."/ZygorGuidesViewer/ZygorGuidesViewer/Navigation.lua")
 local Navigation=assert(ZGV.Navigation,"navigation module did not load")
 
 -- A known taxi in both the current and target zone must produce the two

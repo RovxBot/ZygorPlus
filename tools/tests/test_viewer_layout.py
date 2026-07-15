@@ -8,7 +8,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 LUA_TEST = REPO / "tools" / "tests" / "lua" / "test_viewer_layout.lua"
-VIEWER = REPO / "ZygorGuidesViewerNew" / "ZygorGuidesViewer" / "ModernViewer.lua"
+VIEWER = REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer" / "ModernViewer.lua"
 
 
 class ViewerLayoutTests(unittest.TestCase):

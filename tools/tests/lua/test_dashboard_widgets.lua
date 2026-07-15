@@ -16,7 +16,7 @@ ZygorGuidesViewer = {
   },
 }
 
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/DashboardWidgets.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/DashboardWidgets.lua")
 
 for _, ident in ipairs({ "guidehistory", "guidesuggest", "timeplayed", "dailyreset", "bank", "gold", "worldevents" }) do
   assert(registered[ident], "missing dashboard widget " .. ident)

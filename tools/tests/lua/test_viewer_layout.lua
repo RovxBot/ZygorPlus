@@ -7,7 +7,7 @@ ZygorGuidesViewer = {
 }
 ZGV = ZygorGuidesViewer
 
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/ModernViewer.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/ModernViewer.lua")
 
 local UI = ZygorGuidesViewer.UI
 assert(type(UI.MeasureGoalRow) == "function", "viewer row measurement contract missing")

@@ -9,6 +9,7 @@ import sys
 
 TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parent
+REFERENCE_SOURCE = REPO / "ZygorGuidesViewerClassicTBCAnniv"
 sys.path.insert(0, str(TOOLS))
 
 from audit_port import audit  # noqa: E402
@@ -219,6 +220,7 @@ class PortAuditTests(unittest.TestCase):
             )
             self.assertIn("SOURCE_FILE_COUNT", [issue.code for issue in audit(root, manifest).issues])
 
+    @unittest.skipUnless(REFERENCE_SOURCE.is_dir(), "requires the local Classic/TBC reference corpus")
     def test_repository_inventory_is_fully_classified(self) -> None:
         result = audit(REPO, TOOLS / "port_dispositions.json")
         self.assertEqual(result.issues, [])
@@ -229,6 +231,7 @@ class PortAuditTests(unittest.TestCase):
             self.assertGreater(result.dispositions[disposition], 0)
         self.assertEqual(result.dispositions["pending"], 0)
 
+    @unittest.skipUnless(REFERENCE_SOURCE.is_dir(), "requires the local Classic/TBC reference corpus")
     def test_repository_dormant_viewer_sources_are_not_exact_runtime_ports(self) -> None:
         result = audit(REPO, TOOLS / "port_dispositions.json")
         expected_rule = "replace-unloaded-anniversary-skin-shell"

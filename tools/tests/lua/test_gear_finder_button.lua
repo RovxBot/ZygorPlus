@@ -1,5 +1,5 @@
 local repo=assert(arg[1],"repository path is required")
-local addon=repo.."/ZygorGuidesViewerNew/ZygorGuidesViewer/"
+local addon=repo.."/ZygorGuidesViewer/ZygorGuidesViewer/"
 
 local Object={}
 Object.__index=Object

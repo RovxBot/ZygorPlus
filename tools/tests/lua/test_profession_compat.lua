@@ -1,5 +1,5 @@
 local repo = assert(arg[1], "repository path is required")
-local file = repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/Compat/Profession.lua"
+local file = repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/Compat/Profession.lua"
 
 local function assertEqual(actual, expected, label)
   if actual ~= expected then error(("%s: expected %s, got %s"):format(label, tostring(expected), tostring(actual)), 2) end

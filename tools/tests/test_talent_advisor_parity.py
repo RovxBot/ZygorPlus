@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-ADDON = ROOT / "ZygorGuidesViewerNew" / "ZygorGuidesViewer"
-BUILDS = ROOT / "ZygorGuidesViewerNew" / "ZygorTalentAdvisor" / "Builds" / "LegacyWotLKBuilds.lua"
+ADDON = ROOT / "ZygorGuidesViewer" / "ZygorGuidesViewer"
+BUILDS = ROOT / "ZygorGuidesViewer" / "ZygorTalentAdvisor" / "Builds" / "LegacyWotLKBuilds.lua"
 
 
 class TalentAdvisorParityTests(unittest.TestCase):

@@ -30,7 +30,7 @@ function GetQuestsCompleted(target)
 end
 function QueryQuestsCompleted() queryCalls = queryCalls + 1 end
 
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/Compat/Quest.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/Compat/Quest.lua")
 local Quest = assert(services.Quest)
 local callbackResult
 local started = Quest:RefreshCompleted(true, function(result) callbackResult = result end)
@@ -84,7 +84,7 @@ assertEqual(table.concat(fallbackOrder, ","), "table,noarg", "native table form 
 
 local startArguments
 function StartAuction(...) startArguments = { ... } end
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/Compat/Auction.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/Compat/Auction.lua")
 local Auction = assert(services.Auction)
 Auction.open = true
 local posted = Auction:Start(100, 500, 24, 5, 2)
@@ -123,7 +123,7 @@ function GetTalentPrereqs(tab, talent, inspect, isPet)
   assertEqual(inspect, false, "talent prerequisite inspect argument")
   return 1, 1, not isPet
 end
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/Compat/Talent.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/Compat/Talent.lua")
 local Talent = assert(services.Talent)
 local playerTalent = assert(Talent:GetInfo(1, 2, false))
 assertEqual(playerTalent.prerequisiteTab, 1, "player prerequisite tab")

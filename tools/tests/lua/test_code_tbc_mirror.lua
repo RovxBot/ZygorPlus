@@ -86,7 +86,7 @@ function ZGV:RegisterModule() error("Code-TBC shim attempted duplicate module re
 ZygorGuidesViewer=ZGV
 _G.ZygorGuidesViewer=ZGV
 
-local directory=repo.."/ZygorGuidesViewerNew/ZygorGuidesViewer/Code-TBC/"
+local directory=repo.."/ZygorGuidesViewer/ZygorGuidesViewer/Code-TBC/"
 local files={
   "QuestTracking.lua","Faction.lua","Profession.lua","QuestAutoAccept.lua","QuestDB.lua","Goal.lua",
   "PointerMap.lua","Item-DataTables.lua","Item-ItemScore.lua","Item-GearFinder.lua","InitialFlightPaths.lua",

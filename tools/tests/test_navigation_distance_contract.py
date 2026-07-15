@@ -9,7 +9,7 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parent
-ADDON = REPO / "ZygorGuidesViewerNew" / "ZygorGuidesViewer"
+ADDON = REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer"
 
 
 class NavigationDistanceContractTests(unittest.TestCase):

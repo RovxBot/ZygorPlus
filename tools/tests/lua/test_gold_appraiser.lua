@@ -74,7 +74,7 @@ ZygorGuidesViewer = {
 }
 ZGV = ZygorGuidesViewer
 
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/GoldAppraiser.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/GoldAppraiser.lua")
 local Appraiser = assert(ZygorGuidesViewer.GoldAppraiser)
 
 local raw = {

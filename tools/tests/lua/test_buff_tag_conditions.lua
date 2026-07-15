@@ -1,5 +1,5 @@
 local repo=assert(arg[1],"repository path is required")
-local addon=repo.."/ZygorGuidesViewerNew/ZygorGuidesViewer/"
+local addon=repo.."/ZygorGuidesViewer/ZygorGuidesViewer/"
 
 local modules={}
 ZygorGuidesViewer={Compat={}}
@@ -73,10 +73,10 @@ assert(#unknown.unsupported==1 and unknown.unsupported[1]=="unsupportedfixture",
 -- Private servers can leave historical quest completion unavailable.  The
 -- retry branch therefore only retries when the quest is active, and sends a
 -- non-active quest to the turn-in continuation.
-local hordeSource=assert(io.open(repo.."/ZygorGuidesViewerNew/ZygorGuidesViewer_GuidesHorde/Leveling/ZygorLevelingHordeCLASSIC.lua","r")):read("*a")
+local hordeSource=assert(io.open(repo.."/ZygorGuidesViewer/ZygorGuidesViewer_GuidesHorde/Leveling/ZygorLevelingHordeCLASSIC.lua","r")):read("*a")
 assert(hordeSource:find("havequest%(10041%) and not readyq%(10041%)"),"Horde Terokkar retry requires an active quest")
 assert(hordeSource:find("readyq%(10041%) or not havequest%(10041%)"),"Horde Terokkar non-active quest reaches hand-in")
-local allianceSource=assert(io.open(repo.."/ZygorGuidesViewerNew/ZygorGuidesViewer_GuidesAlliance/Leveling/ZygorLevelingAllianceCLASSIC.lua","r")):read("*a")
+local allianceSource=assert(io.open(repo.."/ZygorGuidesViewer/ZygorGuidesViewer_GuidesAlliance/Leveling/ZygorLevelingAllianceCLASSIC.lua","r")):read("*a")
 assert(allianceSource:find("havequest%(10040%) and not readyq%(10040%)"),"Alliance Terokkar retry requires an active quest")
 assert(allianceSource:find("readyq%(10040%) or not havequest%(10040%)"),"Alliance Terokkar non-active quest reaches hand-in")
 

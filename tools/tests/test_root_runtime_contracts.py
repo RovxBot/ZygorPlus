@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[2]
-ADDON = REPO / "ZygorGuidesViewerNew" / "ZygorGuidesViewer"
+ADDON = REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer"
 TOC = ADDON / "ZygorGuidesViewer.toc"
 MANIFEST = REPO / "tools" / "port_dispositions.json"
 

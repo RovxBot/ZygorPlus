@@ -1,5 +1,5 @@
 local repo = assert(arg[1], "repository root required")
-local addon = repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/"
+local addon = repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/"
 
 time, date = os.time, os.date
 UIParent = { name = "UIParent" }

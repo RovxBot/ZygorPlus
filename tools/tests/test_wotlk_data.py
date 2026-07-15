@@ -10,7 +10,7 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parent
-ADDON = REPO / "ZygorGuidesViewerNew" / "ZygorGuidesViewer"
+ADDON = REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer"
 SOURCE = REPO / "ZygorGuidesViewerClassicTBCAnniv" / "Data-TBC" / "Chains.lua"
 TARGET = ADDON / "Data-WotLK" / "QuestChainsClassicTBC.lua"
 NPC_SOURCE = REPO / "ZygorGuidesViewerClassicTBCAnniv" / "Data-TBC" / "NPCData.lua"
@@ -19,6 +19,7 @@ PORT_MANIFEST = TOOLS / "port_dispositions.json"
 
 
 class WotLKDataTests(unittest.TestCase):
+    @unittest.skipUnless(SOURCE.is_file(), "requires the local Classic/TBC reference corpus")
     def test_classic_tbc_chain_payload_is_exact(self) -> None:
         self.assertEqual(TARGET.read_bytes(), SOURCE.read_bytes())
 
@@ -27,6 +28,7 @@ class WotLKDataTests(unittest.TestCase):
         self.assertLess(toc.index(r"Data-WotLK\QuestChains.lua"), toc.index("ChainsParser.lua"))
         self.assertLess(toc.index("ChainsParser.lua"), toc.index(r"Data-WotLK\QuestChainsClassicTBC.lua"))
 
+    @unittest.skipUnless(NPC_SOURCE.is_file(), "requires the local Classic/TBC reference corpus")
     def test_npc_payload_is_preserved_after_line_ending_normalization(self) -> None:
         source = NPC_SOURCE.read_bytes().replace(b"\r\n", b"\n")
         target = NPC_TARGET.read_bytes().replace(b"\r\n", b"\n")
@@ -68,7 +70,7 @@ class WotLKDataTests(unittest.TestCase):
         self.assertIn('[289]={name="Scholomance"', preview)
         self.assertNotIn("[1004]=", preview)
         self.assertNotIn("[1007]=", preview)
-        images = REPO / "ZygorGuidesViewerNew" / "ZygorGuidesViewer_GuidesCommon" / "Images" / "Dungeons"
+        images = REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer_GuidesCommon" / "Images" / "Dungeons"
         for filename, _, both in re.findall(r'floor\("([^"]+)","([^"]+)"(,true)?\)', preview):
             suffixes = ["both"] if both else ["alliance", "horde"]
             for suffix in suffixes:

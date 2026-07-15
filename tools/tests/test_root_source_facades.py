@@ -11,11 +11,12 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 SOURCE = REPO / "ZygorGuidesViewerClassicTBCAnniv"
-ADDON = REPO / "ZygorGuidesViewerNew" / "ZygorGuidesViewer"
+ADDON = REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer"
 TOOLS = REPO / "tools"
 
 
 class RootSourceFacadeTests(unittest.TestCase):
+    @unittest.skipUnless(SOURCE.is_dir(), "requires the local Classic/TBC reference corpus")
     def test_only_product_packaging_root_files_remain_physically_excluded(self) -> None:
         missing = {
             path.name for path in SOURCE.iterdir()
@@ -44,6 +45,7 @@ class RootSourceFacadeTests(unittest.TestCase):
             self.assertIn(name, entries)
         self.assertIn("Code-TBC/files.xml", entries)
 
+    @unittest.skipUnless(SOURCE.is_dir(), "requires the local Classic/TBC reference corpus")
     def test_source_public_method_inventory_is_preserved(self) -> None:
         method_pattern = re.compile(
             r"^\s*function\s+[A-Za-z_][A-Za-z0-9_.]*[.:]([A-Za-z_][A-Za-z0-9_]*)\s*\(",

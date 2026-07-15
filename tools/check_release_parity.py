@@ -26,6 +26,19 @@ def evaluate(registry_path: Path, require_live: bool = True) -> list[str]:
     if not isinstance(features, list) or not features:
         return ["parity registry must contain features"]
     root = registry_path.parent.parent
+    # Implementation paths are written relative to the deployable addon
+    # bundle. The public repository uses the bundle root from release.json,
+    # while older private worktrees used ZygorGuidesViewerNew.
+    evidence_roots = [root]
+    manifest_path = registry_path.parent / "release.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        manifest = {}
+    bundle_root = manifest.get("bundle_root") if isinstance(manifest, dict) else None
+    if isinstance(bundle_root, str) and bundle_root:
+        evidence_roots.append(root / bundle_root)
+    evidence_roots.append(root / "ZygorGuidesViewerNew")
     errors: list[str] = []
     seen: set[str] = set()
     for index, feature in enumerate(features, 1):
@@ -48,7 +61,7 @@ def evaluate(registry_path: Path, require_live: bool = True) -> list[str]:
                 # Addon implementation paths are expressed relative to the
                 # shipped bundle; tooling evidence is expressed relative to
                 # the repository root.
-                if not ((root / value).exists() or (root / "ZygorGuidesViewerNew" / value).exists()):
+                if not any((candidate / value).exists() for candidate in evidence_roots):
                     errors.append(f"{identifier}: missing {field} evidence {value}")
         if not isinstance(feature.get("live_scenario"), str) or not feature["live_scenario"].strip():
             errors.append(f"{identifier}: missing live_scenario")

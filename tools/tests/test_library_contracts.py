@@ -9,7 +9,7 @@ import sys
 
 TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parent
-BUNDLE = REPO / "ZygorGuidesViewerNew"
+BUNDLE = REPO / "ZygorGuidesViewer"
 ADDON = BUNDLE / "ZygorGuidesViewer"
 SOURCE = REPO / "ZygorGuidesViewerClassicTBCAnniv"
 sys.path.insert(0, str(TOOLS))
@@ -99,6 +99,7 @@ class LibraryContractTests(unittest.TestCase):
             self.assertRegex(routes, rf"\{{item={item_id}(?:,|\}})")
         self.assertIn('["Innkeeper"] = [[', npc_data)
 
+    @unittest.skipUnless(SOURCE.is_dir(), "requires the local Classic/TBC reference corpus")
     def test_empty_source_floor_and_indoor_payloads_are_not_missing_data(self) -> None:
         floor_text = (SOURCE / "Libs-TBC/LibRover-1.0/data_floorcrossings.lua").read_text(encoding="utf-8")
         indoor_text = (SOURCE / "Libs-TBC/LibRover-1.0/data_indoors.lua").read_text(encoding="utf-8")

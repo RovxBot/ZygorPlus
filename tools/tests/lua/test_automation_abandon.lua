@@ -47,7 +47,7 @@ function hooksecurefunc(name, callback)
   hooks[name][#hooks[name] + 1] = callback
 end
 
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/Automation.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/Automation.lua")
 local Automation = assert(modules.Automation)
 Automation:OnStartup()
 assertEqual(#hooks.SetAbandonQuest, 1, "SetAbandonQuest hook")

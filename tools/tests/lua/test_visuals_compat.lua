@@ -62,7 +62,7 @@ ZygorGuidesViewer = {
   Runtime = { SelectGuide = function(_, value) selected = value; return true end },
 }
 
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/VisualsCompat.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/VisualsCompat.lua")
 local Visuals = assert(ZygorGuidesViewer.Visuals)
 
 assert(Visuals:CheckConditions({ faction = "A", class = "MAGE" }), "token class and faction condition")

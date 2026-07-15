@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parents[2]
-ADDON = REPO / "ZygorGuidesViewerNew" / "ZygorGuidesViewer"
+ADDON = REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer"
 SOURCE = REPO / "ZygorGuidesViewerClassicTBCAnniv" / "Code-TBC"
 MIRROR = ADDON / "Code-TBC"
 MANIFEST = REPO / "tools" / "port_dispositions.json"
@@ -69,6 +69,7 @@ def load_closure() -> set[str]:
     return loaded
 
 
+@unittest.skipUnless(SOURCE.is_dir(), "requires the local Classic/TBC reference corpus")
 class CodeTBCMirrorTests(unittest.TestCase):
     def test_all_assigned_source_paths_have_loaded_same_path_shims(self) -> None:
         closure = load_closure()

@@ -39,5 +39,9 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s tools/tests -v
           python3 tools/validate_addons.py --strict
-          python3 tools/audit_port.py --fail-on-pending
+          if [[ -d ZygorGuidesViewerClassicTBCAnniv ]]; then
+            python3 tools/audit_port.py --fail-on-pending
+          else
+            echo "Source-port audit skipped: the private reference corpus is not part of this checkout."
+          fi
           python3 tools/check_release_parity.py --allow-live-pending

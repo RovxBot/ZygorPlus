@@ -6,7 +6,7 @@ roots; and the capability probe is a development addon that is disabled by
 default. Packaging never modifies an addon source tree and rejects an output path
 inside one.
 
-`release.json` selects the deployable directories below `ZygorGuidesViewerNew`.
+`release.json` selects the deployable directories below `ZygorGuidesViewer`.
 The adjacent upstream source/reference files remain available for porting work,
 but are deliberately excluded from the 3.3.5a release when they require modern
 XML or APIs.
@@ -130,6 +130,22 @@ folders, tests, source-art files, editor backups, logs, and Python files are
 excluded. Symlinks are rejected. Packaging is blocked when validation or the
 feature-parity gate has errors. `--skip-validation` exists only to inspect
 incomplete development bundles and must not be used for a release.
+
+## Create a GitHub release
+
+The **Create release** GitHub Actions workflow is the public release profile.
+It is intentionally manual and accepts only an existing semantic-version tag.
+Before triggering it, commit the final sources with the matching version in
+`release.json`, create and push a tag such as `v0.1.13`, then select that tag in
+**Actions → Create release → Run workflow**. The workflow checks out the tag,
+runs the complete automated suite and strict validation/parity gates, builds the
+deterministic ZIP and checksum, preserves them as workflow artifacts, and then
+creates the GitHub Release with generated notes. It refuses an existing release
+or a tag/version mismatch.
+
+The workflow requires the repository's Actions `GITHUB_TOKEN` to have
+**Contents: write** permission. It never publishes if the strict parity registry
+still has a pending live-client scenario.
 
 ## Feature-parity release gate
 

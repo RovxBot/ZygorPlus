@@ -59,7 +59,7 @@ function Astrolabe:ComputeDistance()
   return nil
 end
 
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/Compat/Map.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/Compat/Map.lua")
 local Map = assert(services.Map, "map compatibility service did not load")
 
 local player = {
@@ -95,7 +95,7 @@ assertNear(normalised.yDelta, 0, 0.0000001, "normalised fallback y bearing")
 function Map:GetPlayerPosition() return player end
 GetPlayerFacing = function() return 0 end
 
-dofile(repo .. "/ZygorGuidesViewerNew/ZygorGuidesViewer/Navigation.lua")
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/Navigation.lua")
 local Navigation = assert(ZGV.Navigation, "navigation module did not load")
 Navigation.waypoint = target
 Navigation.route = nil
