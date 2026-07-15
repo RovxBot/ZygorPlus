@@ -134,14 +134,15 @@ incomplete development bundles and must not be used for a release.
 ## Create a GitHub release
 
 The **Create release** GitHub Actions workflow is the public release profile.
-It is intentionally manual and accepts only an existing semantic-version tag.
-Before triggering it, commit the final sources with the matching version in
-`release.json`, create and push a tag such as `v0.1.13`, then select that tag in
-**Actions → Create release → Run workflow**. The workflow checks out the tag,
-runs the complete automated suite and strict validation/parity gates, builds the
-deterministic ZIP and checksum, preserves them as workflow artifacts, and then
-creates the GitHub Release with generated notes. It refuses an existing release
-or a tag/version mismatch.
+It is intentionally manual. Before triggering it, commit and push the final
+sources with a semantic version (for example `0.1.13`) in `release.json`, then
+select that commit's branch in **Actions → Create release → Run workflow**. The
+workflow derives and checks availability of the matching `v0.1.13` tag, runs the complete
+automated suite and strict validation/parity gates, builds the deterministic ZIP
+and checksum, preserves them as workflow artifacts, creates and pushes an
+annotated release tag, then creates the GitHub Release with generated notes. It
+refuses an existing release or tag and never creates a tag until every gate has
+passed.
 
 The workflow requires the repository's Actions `GITHUB_TOKEN` to have
 **Contents: write** permission. It never publishes if the strict parity registry

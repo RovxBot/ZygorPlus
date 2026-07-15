@@ -1,4 +1,4 @@
-# ZygorPlus — WoW 3.3.5a guide viewer port
+# ZygorPlus - WoW classic guide viewer backport
 
 ZygorPlus is a guide-viewer port for World of Warcraft 3.3.5a (build 12340).
 Each release contains the viewer plus Common, Alliance, Horde, and legacy

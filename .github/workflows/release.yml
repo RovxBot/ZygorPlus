@@ -2,17 +2,12 @@ name: Create release
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: Existing release tag to publish, for example v0.1.13
-        required: true
-        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ inputs.tag }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -21,12 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out the release tag
+      - name: Check out the selected release commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -39,20 +34,25 @@ jobs:
           sudo apt-get install --yes lua5.1
           sudo ln -sf "$(command -v lua5.1)" /usr/local/bin/lua
 
-      - name: Verify release tag and version
+      - name: Verify release version and tag availability
+        id: release_metadata
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}" >/dev/null
           VERSION="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8"))["version"])')"
-          [[ "$RELEASE_TAG" == "v$VERSION" ]]
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          RELEASE_TAG="v$VERSION"
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null; then
+            echo "The tag $RELEASE_TAG already exists." >&2
+            exit 1
+          fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "A GitHub release already exists for $RELEASE_TAG." >&2
             exit 1
           fi
+          printf 'RELEASE_TAG=%s\n' "$RELEASE_TAG" >> "$GITHUB_ENV"
+          printf 'release_tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Run automated tests
         run: |
@@ -74,16 +74,27 @@ jobs:
       - name: Upload release files
         uses: actions/upload-artifact@v4
         with:
-          name: ZygorGuidesViewer-WotLK-${{ inputs.tag }}
+          name: ZygorGuidesViewer-WotLK-${{ steps.release_metadata.outputs.release_tag }}
           if-no-files-found: error
           path: |
             tools/dist/*.zip
             tools/dist/*.zip.sha256
 
+      - name: Create and push release tag
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null; then
+            echo "The tag $RELEASE_TAG was created while this workflow was running." >&2
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "$RELEASE_TAG" --message "ZygorPlus ${RELEASE_TAG#v}" "$GITHUB_SHA"
+          git push origin "refs/tags/$RELEASE_TAG"
+
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
           gh release create "$RELEASE_TAG" tools/dist/*.zip tools/dist/*.zip.sha256 \
