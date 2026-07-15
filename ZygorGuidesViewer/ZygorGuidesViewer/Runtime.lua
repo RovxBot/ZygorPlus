@@ -229,8 +229,11 @@ function Runtime:IsGoalComplete(goal,stepIndex,goalIndex)
       return ZGV.Navigation:IsMapTransitionComplete(goal.mapTransition),"map-transition"
     end
     if ZGV.Navigation then return ZGV.Navigation:IsArrived(goal.destination),"position" end
-  elseif action=="skill" or action=="reachskill" or action=="skillmax" then
+  elseif action=="skill" or action=="reachskill" then
     return ZGV.Conditions:Skill(goal.skillName)>=(goal.skillRank or 1),"skill"
+  elseif action=="skillmax" then
+    local condition=ZGV.Conditions.SkillMax or ZGV.Conditions.Skill
+    return condition(ZGV.Conditions,goal.skillName)>=(goal.skillRank or 1),"skillmax"
   elseif action=="havebuff" then
     return ZGV.Conditions:HaveBuff(goal.haveBuff or (goal.modifiers and goal.modifiers.haveBuff) or goal.spellID or goal.objectID),"buff"
   elseif action=="nobuff" then
@@ -486,6 +489,11 @@ function Runtime:GetProgressFingerprint(step,index)
       part[#part+1]="talk="..(self.talked[self:ManualKey(index,goalIndex)] and "yes" or "no")
     elseif goal.action=="gossip" then
       part[#part+1]="gossip="..(self.gossiped[self:ManualKey(index,goalIndex)] and "yes" or "no")
+    elseif goal.action=="skill" or goal.action=="reachskill" then
+      part[#part+1]="skill="..tostring(goal.skillName or "")..":"..tostring(ZGV.Conditions:Skill(goal.skillName))
+    elseif goal.action=="skillmax" then
+      local condition=ZGV.Conditions.SkillMax or ZGV.Conditions.Skill
+      part[#part+1]="skillmax="..tostring(goal.skillName or "")..":"..tostring(condition(ZGV.Conditions,goal.skillName))
     end
     if goal.expression then
       local result=ZGV.Conditions:Evaluate(goal.expression,self.currentGuide)
@@ -756,7 +764,7 @@ function Runtime:ChooseSuggestedGuide()
   return ZGV.Catalog.sorted[1]
 end
 
-function Runtime:Tick()
+function Runtime:Tick(immediate)
   if not self.currentGuide then return end
   local state=self:GetStepState(self.currentGuide.steps[self.currentStep],self.currentStep)
   -- A guide step may contain several authored travel points. Re-select after
@@ -771,7 +779,7 @@ function Runtime:Tick()
     -- actually changed, or immediately by real kill/talk/gossip credit.
     return
   end
-  if state.complete and GetTime()-self.lastAdvance>=self.autoAdvanceDelay then
+  if state.complete and (immediate or GetTime()-self.lastAdvance>=self.autoAdvanceDelay) then
     self.lastAdvance=GetTime()
     self:NextStep(false)
   end
@@ -1037,11 +1045,16 @@ function Runtime:OnEvent(event,...)
   if event=="UI_INFO_MESSAGE" then self:RecordDiscovery(...) end
   if event=="QUEST_COMPLETE" then self:RememberTurnIn() end
   if event=="QUEST_FINISHED" then self.pendingTurnIn=nil end
+  local skillChanged=event=="SKILL_LINES_CHANGED" or event=="TRADE_SKILL_UPDATE"
   if event=="QUEST_LOG_UPDATE" or event=="BAG_UPDATE" or event=="PLAYER_LEVEL_UP"
     or event=="UNIT_INVENTORY_CHANGED" or event=="ACHIEVEMENT_EARNED"
-    or (event=="UNIT_AURA" and unit=="player") then
+    or (event=="UNIT_AURA" and unit=="player") or skillChanged then
     self:RefreshBlockedProgress(event)
   end
+  -- Build 12340 raises this after buying a trainer rank and after gaining a
+  -- profession point. Check immediately so the completed rank objective
+  -- selects the following guide stage without waiting for the periodic tick.
+  if skillChanged then self:Tick(true) end
   ZGV:Fire("ZGV_GOAL_UPDATED",self.currentGuide,self.currentStep)
 end
 
@@ -1082,7 +1095,7 @@ function Runtime:OnStartup()
   end
 end
 
-for _,event in ipairs({"QUEST_LOG_UPDATE","BAG_UPDATE","PLAYER_LEVEL_UP","UNIT_INVENTORY_CHANGED","ACHIEVEMENT_EARNED","UNIT_AURA","PLAYER_DEAD","PLAYER_UNGHOST","COMBAT_LOG_EVENT_UNFILTERED","GOSSIP_SHOW","QUEST_GREETING","QUEST_DETAIL","QUEST_PROGRESS","QUEST_COMPLETE","QUEST_FINISHED","MERCHANT_SHOW","TRAINER_SHOW","TAXIMAP_OPENED","UI_INFO_MESSAGE"}) do
+for _,event in ipairs({"QUEST_LOG_UPDATE","BAG_UPDATE","PLAYER_LEVEL_UP","UNIT_INVENTORY_CHANGED","ACHIEVEMENT_EARNED","UNIT_AURA","PLAYER_DEAD","PLAYER_UNGHOST","COMBAT_LOG_EVENT_UNFILTERED","GOSSIP_SHOW","QUEST_GREETING","QUEST_DETAIL","QUEST_PROGRESS","QUEST_COMPLETE","QUEST_FINISHED","MERCHANT_SHOW","TRAINER_SHOW","TAXIMAP_OPENED","UI_INFO_MESSAGE","SKILL_LINES_CHANGED","TRADE_SKILL_UPDATE"}) do
   ZGV:RegisterEvent(event,Runtime,"OnEvent")
 end
 

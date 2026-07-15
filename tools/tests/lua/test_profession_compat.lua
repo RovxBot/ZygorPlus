@@ -12,6 +12,8 @@ function Compat:RegisterEvent(event,owner,method) events[event]={owner=owner,met
 function Compat.Bool(value) return value and true or false end
 function Compat:Result(ok,code,data) data=data or {} data.ok=ok and true or false data.code=code return data end
 ZygorGuidesViewer={Compat=Compat}
+function ZygorGuidesViewer:RegisterModule(name,module) self[name]=module return module end
+function ZygorGuidesViewer:RegisterEvent() end
 
 local spellNames={
   [2259]={"Alchemy",nil,"alchemy-icon"},
@@ -65,6 +67,15 @@ assertEqual(all[1].skillModifier,5,"legacy tuple modifier")
 assertEqual(all[1].maxSkillLevel,450,"legacy tuple maximum")
 assertEqual(all[1].skillLine,171,"legacy tuple skill line")
 assertEqual(Profession:GetSkill(773).skillLevel,410,"legacy Inscription lookup")
+
+-- A trained rank updates the profession maximum without requiring the
+-- character to earn every point in that rank. The guide DSL exposes both
+-- values: `skill` for current points and `skillmax` for trainer ranks.
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/Conditions.lua")
+local Conditions=assert(ZygorGuidesViewer.Conditions)
+assertEqual(Conditions:Skill("Alchemy"),375,"condition current profession rank")
+assertEqual(Conditions:SkillMax("Alchemy"),450,"condition profession maximum")
+assertEqual(skillmax("Alchemy"),450,"guide skillmax predicate uses profession maximum")
 
 local cache=Profession:RefreshRecipes()
 local recipe=assert(cache[53042],"recipe spell cache missing")

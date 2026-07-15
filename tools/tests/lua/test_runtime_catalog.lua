@@ -23,7 +23,8 @@ function ZGV:RegisterModule(name, module)
   self[name] = module
   return module
 end
-function ZGV:RegisterEvent() end
+local registeredEvents={}
+function ZGV:RegisterEvent(event,owner,method) registeredEvents[event]={owner=owner,method=method} end
 function ZGV:RegisterCallback() end
 function ZGV:Fire() end
 function ZGV:LogInfo() end
@@ -106,17 +107,45 @@ end
 function ZGV.Conditions:ItemCount() return 0 end
 local hasShadowyDisguise=false
 function ZGV.Conditions:HaveBuff(value) return hasShadowyDisguise and (value==32756 or tostring(value):find("Shadowy Disguise",1,true)~=nil) end
-function ZGV.Conditions:Skill() return 0 end
+local skillRanks,skillMaximums={},{}
+function ZGV.Conditions:Skill(name) return skillRanks[tostring(name or ""):lower()] or 0 end
+function ZGV.Conditions:SkillMax(name) return skillMaximums[tostring(name or ""):lower()] or 0 end
 function ZGV.Conditions:Reputation() return 0 end
 
 dofile(addon .. "Runtime.lua")
 local Runtime = ZGV.Runtime
 Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionIssues = {} }
+assert(registeredEvents.SKILL_LINES_CHANGED and registeredEvents.TRADE_SKILL_UPDATE,
+  "runtime watches profession changes from the 3.3.5a client")
 
 -- Terokkar's disguise retry must remain on its visible `havebuff` objective
 -- until the player has the actual aura.  This is the gate that previously
 -- auto-ran through blank steps and jumped back to its retry label.
 dofile(addon .. "Parser.lua")
+local trainerGuide=assert(ZGV.Parser:ParseEntry({
+  id="engineering-rank",title="Engineering rank",header={},raw=[[
+step
+Train Apprentice Engineering |skillmax Engineering,75 |goto Orgrimmar/0 76.18,25.18
+step
+Open Your Engineering Crafting Panel
+]]
+}))
+local trainerGoal=trainerGuide.steps[1].goals[1]
+assertEqual(trainerGoal.action,"skillmax","trainer rank is parsed as a profession-cap goal")
+skillRanks.engineering,skillMaximums.engineering=75,0
+assertEqual(Runtime:IsGoalComplete(trainerGoal,1,1),false,
+  "current Engineering points do not falsely satisfy an untrained rank")
+skillMaximums.engineering=75
+local trainerComplete,trainerReason=Runtime:IsGoalComplete(trainerGoal,1,1)
+assertEqual(trainerComplete,true,"Apprentice Engineering completes when its 75-point cap is trained")
+assertEqual(trainerReason,"skillmax","trainer completion reports the profession-cap source")
+Runtime.currentGuide,Runtime.currentStep=trainerGuide,1
+Runtime.manual={}
+Runtime.lastAdvance=GetTime()
+Runtime:OnEvent("SKILL_LINES_CHANGED")
+assertEqual(Runtime.currentStep,2,"training immediately advances to the next profession stage")
+skillRanks.engineering,skillMaximums.engineering=0,0
+
 local shadowyGuide=assert(ZGV.Parser:ParseEntry({
   id="shadowy-runtime",title="Shadowy runtime",header={},raw=[[
 step

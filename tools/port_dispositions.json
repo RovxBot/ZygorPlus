@@ -714,6 +714,17 @@
       ]
     },
     {
+      "id": "adapt-horde-profession-guide",
+      "disposition": "adapted",
+      "reason": "The retained full profession payload keeps the authored routes while correcting suggestions to use the character's matching profession and current range.",
+      "source_paths": [
+        "Guides-TBC/Professions/ZygorProfessionsHordeCLASSIC.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer_GuidesHorde/Professions/ZygorProfessionsHordeCLASSIC.lua"
+      ]
+    },
+    {
       "id": "adapt-common-profession-guide",
       "disposition": "adapted",
       "reason": "The retained common profession payload removes duplicate guide registrations while preserving the selected routes.",
