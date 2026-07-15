@@ -7,9 +7,14 @@ end
 local Compat = {}
 local player
 local map = {}
+local continents={
+  ["Terokkar Forest/0"]=3,["Shattrath City/0"]=3,
+  ["Elwynn Forest/0"]=2,["Stormwind City/0"]=2,
+  ["Borean Tundra/0"]=4,["Dragonblight/0"]=4,["Unlinked Zone/0"]=1,["Remote Zone/0"]=1,
+}
 function map:Resolve(key)
   if type(key) == "table" then return key end
-  return {key=key,legacy={continent=3}}
+  return {key=key,legacy={continent=continents[key] or 3}}
 end
 function map:GetPlayerPosition() return player end
 function map:GetDistance()
@@ -19,18 +24,31 @@ end
 local taxiNodes={
   {key="allerian",mapKey="Terokkar Forest/0",name="Allerian Stronghold",title="Allerian Stronghold Flight Master",x=.5945,y=.5543},
   {key="shattrath",mapKey="Shattrath City/0",name="Shattrath",title="Shattrath Flight Master",x=.6407,y=.4112},
+  {key="goldshire",mapKey="Elwynn Forest/0",name="Goldshire",title="Goldshire Flight Master",x=.42,y=.66},
+  {key="stormwind",mapKey="Stormwind City/0",name="Stormwind",title="Stormwind Flight Master",x=.66,y=.62},
+  {key="valiance",mapKey="Borean Tundra/0",name="Valiance Keep",title="Valiance Keep Flight Master",x=.58,y=.68},
+  {key="wyrmrest",mapKey="Dragonblight/0",name="Wyrmrest Temple",title="Wyrmrest Temple Flight Master",x=.60,y=.55},
 }
 Compat.Map=map
 Compat.Taxi={GetKnownStaticNodes=function() return taxiNodes end}
 
 ZygorGuidesViewer={
   Compat=Compat,
-  Data={routes={
+  Data={Taxi=taxiNodes,routes={
     nodes={
       terokkar_gate={mapKey="Terokkar Forest/0",x=.360,y=.319,title="Shattrath City Gate"},
       shattrath_gate={mapKey="Shattrath City/0",x=.762,y=.773,title="Shattrath City Gate"},
+      stormwind_harbor={mapKey="Stormwind City/0",x=.184,y=.254,title="Stormwind Harbor"},
+      valiance_dock={mapKey="Borean Tundra/0",x=.590,y=.684,title="Valiance Keep"},
     },
-    links={{"terokkar_gate","shattrath_gate","enter",38,nil,"leave"}},
+    links={
+      {"terokkar_gate","shattrath_gate","enter",38,nil,"leave"},
+      {"stormwind_harbor","valiance_dock","boat",120,"Alliance"},
+    },
+    portkeys={
+      {item=6948,destination="_HEARTH",cost=80,mode="hearth"},
+      {spell=556,destination="_HEARTH",cost=20,mode="hearth",isAstral=true},
+    },
   }},
   db={profile={arrow={arrival=15},navigation={enabled=true,knownTaxi={}}}},
 }
@@ -42,6 +60,13 @@ function ZGV:Fire() end
 function ZGV:LogInfo() end
 function ZGV:LogError(_, _, message) error(message, 2) end
 UnitFactionGroup=function() return "Alliance" end
+GetBindLocation=function() return "Stormwind" end
+GetItemCount=function(item) return item==6948 and 1 or 0 end
+IsUsableItem=function() return true end
+GetItemCooldown=function() return 0,0,1 end
+IsSpellKnown=function(spell) return spell==556 end
+IsUsableSpell=function() return true end
+GetSpellCooldown=function() return 0,0,1 end
 
 dofile(repo.."/ZygorGuidesViewer/ZygorGuidesViewer/Navigation.lua")
 local Navigation=assert(ZGV.Navigation,"navigation module did not load")
@@ -54,6 +79,32 @@ assertEqual(#route.path,2,"taxi route vertex count")
 assertEqual(route.path[1].mode,"walk","taxi route starts by walking to the flight master")
 assertEqual(route.path[2].mode,"taxi","taxi route includes a flight action")
 assertEqual(route.path[2].node.mapKey,"Shattrath City/0","taxi lands in the target map")
+
+-- Learned taxis must connect to a same-map transport node, then continue on
+-- a new continent.  The previous reduced planner considered only a source
+-- and target taxi pair, so it could never suggest this flight + boat route.
+player={key="Elwynn Forest/0",valid=true,x=.43,y=.65}
+route=assert(Navigation:FindRoute(nil,{key="Dragonblight/0",x=.61,y=.56,title="Dragonblight objective"}),"multi-continent route was not found")
+local sawTaxi,sawBoat=false,false
+for _,entry in ipairs(route.path) do
+  if entry.mode=="taxi" then sawTaxi=true end
+  if entry.mode=="boat" then sawBoat=true end
+end
+assertEqual(sawTaxi,true,"route includes learned flight paths")
+assertEqual(sawBoat,true,"route connects flight path to boat")
+
+-- Astral Recall is a ready, lower-cost travel leg to the known bind point.
+-- It must be shown as advice, never invoked by navigation.
+route=assert(Navigation:FindRoute(nil,{key="Stormwind City/0",x=.50,y=.60,title="Stormwind objective"}),"Astral Recall route was not found")
+assertEqual(route.path[1].mode,"astral","ready Astral Recall is preferred over Hearthstone")
+assertEqual(route.path[1].label,"Stormwind","Astral Recall names the bound destination")
+
+-- Even without a complete route graph, a ready travel ability remains useful
+-- advice.  The final continuation will be rebuilt from the live bind map.
+player={key="Unlinked Zone/0",valid=true,x=.5,y=.5}
+route=assert(Navigation:FindRoute(nil,{key="Remote Zone/0",x=.61,y=.56,title="Remote objective"}),"travel fallback was not found")
+assertEqual(route.fallback,true,"incomplete graph returns a marked fallback")
+assertEqual(route.path[1].mode,"astral","fallback recommends ready Astral Recall")
 
 -- Route originally chose the western Shattrath gate.  Entering through a
 -- different gate still changes the live map to Shattrath, so navigation must

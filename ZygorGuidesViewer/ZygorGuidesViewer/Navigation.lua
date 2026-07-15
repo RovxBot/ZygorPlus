@@ -6,6 +6,11 @@ local function navigationEnabled()
   return not (ZGV.db and ZGV.db.profile and ZGV.db.profile.navigation and ZGV.db.profile.navigation.enabled==false)
 end
 
+local function navigationOption(name)
+  local navigation=ZGV.db and ZGV.db.profile and ZGV.db.profile.navigation
+  return not navigation or navigation[name]~=false
+end
+
 local function pointerOption(name)
   local pointer=ZGV.db and ZGV.db.profile and ZGV.db.profile.pointer
   return not pointer or pointer[name]~=false
@@ -130,7 +135,7 @@ function Navigation:GetNavigationTarget()
   return self.waypoint,nil
 end
 
-local transportModes={taxi=true,boat=true,zeppelin=true,portal=true,teleport=true,enter=true,leave=true,cross=true}
+local transportModes={taxi=true,boat=true,zeppelin=true,portal=true,teleport=true,enter=true,leave=true,cross=true,hearth=true,astral=true,useitem=true,spell=true}
 
 -- A route can name one exact gate while the player reaches the destination
 -- map through another valid entrance.  Once the client reports the new map,
@@ -183,10 +188,12 @@ function Navigation:GetRouteInstructions()
     -- Guide-authored movement labels already contain their verb (for example
     -- "Run up the ramp").  Prefixing them produced the visible "Run to Run
     -- up the ramp" duplication in the pointer.
-    if mode=="walk" and destination:lower():match("^(run|ride|go|enter|leave|follow|climb|take|use|continue)%s") then return destination end
+    if destination:lower():match("^(run|ride|go|enter|leave|follow|climb|take|use|continue|fly)%s") then return destination end
     local verb={
       walk="Run to ",taxi="Fly to ",boat="Take the boat to ",zeppelin="Take the zeppelin to ",
-      portal="Use the portal to ",teleport="Use the teleport to ",enter="Enter ",leave="Leave ",cross="Enter ",
+      portal="Use the portal to ",teleport="Use the teleport to ",hearth="Use Hearthstone to ",
+      astral="Use Astral Recall to ",useitem="Use the travel item to ",spell="Cast the travel spell to ",
+      enter="Enter ",leave="Leave ",cross="Enter ",
     }
     return (verb[mode] or "Travel to ")..destination
   end
@@ -201,10 +208,20 @@ function Navigation:GetRouteInstructions()
       }
     end
   end
+  if route and route.advisory then
+    local index=#instructions+1
+    instructions[index]={
+      index=index,complete=false,active=(self.routeIndex or 1)>#(route.path or {}),
+      mode=route.advisory.mode or "walk",text=instructionText(route.advisory.mode,route.advisory.label),
+      target=route.advisory.node,
+    }
+  end
   if self.waypoint then
+    local index=#instructions+1
+    local advisory=route and route.advisory
     instructions[#instructions+1]={
-      index=#instructions+1,complete=(self.routeIndex or 1)>#instructions+1,
-      active=(self.routeIndex or 1)>=(#instructions+1),mode="walk",
+      index=index,complete=not advisory and (self.routeIndex or 1)>index,
+      active=not advisory and (self.routeIndex or 1)>=index,mode="walk",
       text=instructionText("walk",self.waypoint.title or "the guide destination"),target=self.waypoint,
     }
   end
@@ -734,6 +751,84 @@ local function allowed(link)
   return not link[5] or link[5]==faction
 end
 
+local function compactName(value)
+  return tostring(value or ""):lower():gsub("[^%w]","")
+end
+
+local function cooldownReady(getter,id)
+  if type(getter)~="function" then return true end
+  local start,duration,enabled=getter(id)
+  if enabled==0 then return false end
+  return not (tonumber(start) and tonumber(start)>0 and tonumber(duration) and tonumber(duration)>0)
+end
+
+-- The 3.3.5 client reports the character's bind by its inn/city name, not a
+-- map key or coordinate.  Prefer a matching static flight-master record: it
+-- gives the route a real local point after the hearth and keeps the next leg
+-- useful.  A map-name bind still gets a safe centre-map fallback so the arrow
+-- can advise the travel action without inventing a direction across maps.
+function Navigation:ResolveHearthLocation()
+  if type(GetBindLocation)~="function" then return nil end
+  local bind=GetBindLocation("player") or GetBindLocation()
+  if type(bind)~="string" or bind=="" then return nil end
+  local wanted=compactName(bind)
+  local faction=type(UnitFactionGroup)=="function" and UnitFactionGroup("player") or nil
+  local factionKey=faction=="Alliance" and "A" or faction=="Horde" and "H" or nil
+  local static=ZGV.Data and (ZGV.Data.Taxi or ZGV.Data.taxi) or {}
+  for _,node in pairs(static) do
+    local matches=compactName(node.name)==wanted
+    if not matches then
+      for _,alias in ipairs(node.aliases or {}) do
+        if compactName(alias)==wanted then matches=true break end
+      end
+    end
+    if matches and (not node.faction or node.faction=="B" or node.faction==factionKey) and node.mapKey and node.x and node.y then
+      return {mapKey=node.mapKey,x=node.x,y=node.y,title=bind}
+    end
+  end
+  local map=ZGV.Compat and ZGV.Compat.Map and ZGV.Compat.Map:Resolve(bind.."/0")
+  if map and map.key then return {mapKey=map.key,x=.5,y=.5,title=bind} end
+  return nil
+end
+
+function Navigation:GetAvailableTravelPorts(data)
+  local ports={}
+  if type(data)~="table" or type(data.portkeys)~="table" or (type(UnitOnTaxi)=="function" and UnitOnTaxi("player")) then return ports end
+  for _,port in ipairs(data.portkeys) do
+    local isAstral=port.isAstral or port.is_astral
+    local enabled=(isAstral and navigationOption("useAstralRecall"))
+      or (port.mode=="hearth" and navigationOption("useHearth"))
+      or ((not port.mode or port.mode~="hearth") and navigationOption("useTravelItems"))
+    local available=enabled
+    if available and port.item then
+      available=type(GetItemCount)=="function" and (tonumber(GetItemCount(port.item)) or 0)>0
+      if available and type(IsUsableItem)=="function" then available=IsUsableItem(port.item) and true or false end
+      if available then available=cooldownReady(GetItemCooldown,port.item) end
+    elseif available and port.spell then
+      available=type(IsSpellKnown)=="function" and IsSpellKnown(port.spell)
+      if available and type(IsUsableSpell)=="function" then available=IsUsableSpell(port.spell) and true or false end
+      if available then available=cooldownReady(GetSpellCooldown,port.spell) end
+    else
+      available=false
+    end
+    if available then
+      local destination
+      if port.destination=="_HEARTH" then destination=self:ResolveHearthLocation()
+      elseif type(port.destination)=="string" then
+        destination=self:ResolveTarget({mapKey=port.destination,x=port.x,y=port.y,title=port.title})
+      end
+      if destination and destination.mapKey and destination.x and destination.y then
+        local mode=isAstral and "astral" or port.mode or (port.spell and "spell") or "useitem"
+        ports[#ports+1]={
+          destination=destination,mode=mode,cost=tonumber(port.cost) or 80,
+          label=port.title or destination.title or "the next route point",
+        }
+      end
+    end
+  end
+  return ports
+end
+
 function Navigation:FindRoute(from,to)
   local data=ZGV.Data.routes
   if not data or not to then return nil end
@@ -799,42 +894,82 @@ function Navigation:FindRoute(from,to)
     -- nearby route node.
     return math.max(3,math.sqrt(dx*dx+dy*dy)*100)
   end
-  -- The client exposes the player's discovered taxi destinations only while
-  -- a taxi map is opened.  Compat.Taxi persists those discoveries and joins
-  -- them to Data-WotLK/TaxiNodes.lua here.  Treat every learned source and
-  -- destination on the same world continent as a selectable flight; the
-  -- server itself handles intermediate flight stops for a selected endpoint.
-  local taxiSources,taxiDestinations={},{}
+  -- The reference Rover graph adds ready hearths and travel items as edges
+  -- from the live player position.  Keep that outcome, but never take the
+  -- action: the resulting route only tells the player what is available.
+  local travelPorts=self:GetAvailableTravelPorts(data)
+  local travelKeys={}
+  for index,port in ipairs(travelPorts) do
+    local key="_travel_"..tostring(index)
+    local destination=port.destination
+    nodes[key]={
+      mapKey=destination.mapKey,x=destination.x,y=destination.y,title=destination.title,
+      travel=true,
+    }
+    travelKeys[#travelKeys+1]=key
+    edge("START",key,port.cost,port.mode,port.label)
+  end
+
+  -- The client exposes learned flight nodes only while a taxi map is open.
+  -- Compat.Taxi persists them.  Join each learned node to a tiny per-world
+  -- continent hub so a route can fly to a port, take a ship/zeppelin/portal,
+  -- then continue from a learned flight master on the other side.  Hub nodes
+  -- are graph-only and deliberately omitted from the player-facing route.
+  local taxiByMap,taxiSources={},{}
   local taxi=ZGV.Compat and ZGV.Compat.Taxi
-  if player.key~=to.key and taxi and type(taxi.GetKnownStaticNodes)=="function" then
+  if player.key~=to.key and navigationOption("useTaxi") and taxi and type(taxi.GetKnownStaticNodes)=="function" then
     local function taxiContinent(mapKey)
       local record=ZGV.Compat.Map:Resolve(mapKey)
       local legacy=record and (record.legacy or record)
       return legacy and legacy.continent
     end
-    local sourceContinent=taxiContinent(player.key)
-    local destinationContinent=taxiContinent(to.key)
-    if sourceContinent and sourceContinent==destinationContinent then
-      for _,taxiNode in ipairs(taxi:GetKnownStaticNodes()) do
-        local mapKey=taxiNode.mapKey
-        if mapKey and taxiContinent(mapKey)==sourceContinent and taxiNode.x and taxiNode.y then
-          local key="_taxi_"..tostring(taxiNode.key or (mapKey..":"..tostring(taxiNode.name)))
-          nodes[key]={
-            mapKey=mapKey,x=taxiNode.x,y=taxiNode.y,
-            title=taxiNode.title or ((taxiNode.name or "Flight Master").." Flight Master"),
-            taxi=true,
-          }
-          if mapKey==player.key then taxiSources[#taxiSources+1]=key end
-          if mapKey==to.key then taxiDestinations[#taxiDestinations+1]=key end
-        end
+    for _,taxiNode in ipairs(taxi:GetKnownStaticNodes()) do
+      local mapKey=taxiNode.mapKey
+      local continent=mapKey and taxiContinent(mapKey)
+      if continent and taxiNode.x and taxiNode.y then
+        local key="_taxi_"..tostring(taxiNode.key or (mapKey..":"..tostring(taxiNode.name)))
+        nodes[key]={
+          mapKey=mapKey,x=taxiNode.x,y=taxiNode.y,
+          title=taxiNode.title or ((taxiNode.name or "Flight Master").." Flight Master"),
+          taxi=true,
+        }
+        taxiByMap[mapKey]=taxiByMap[mapKey] or {}
+        taxiByMap[mapKey][#taxiByMap[mapKey]+1]=key
+        if mapKey==player.key then taxiSources[#taxiSources+1]=key end
+        local hub="_taxi_continent_"..tostring(continent)
+        if not nodes[hub] then nodes[hub]={virtual=true} end
+        edge(key,hub,3,"taxi")
+        edge(hub,key,25,"taxi")
       end
-      -- The fixed value represents boarding/flying overhead in the route
-      -- scorer.  Local walking distance to/from the known flight masters is
-      -- still included by the normal START/FINISH edges, so a distant flight
-      -- master is not preferred over a nearby legal ground route.
-      for _,source in ipairs(taxiSources) do
-        for _,destination in ipairs(taxiDestinations) do
-          if source~=destination then edge(source,destination,25,"taxi") end
+    end
+  end
+
+  -- Transport docks/portals and flight masters share a map but are separate
+  -- authored vertices.  Join only those transfer points locally; connecting
+  -- every authored route node would bypass deliberate city corridors.
+  local transferByMap={}
+  for mapKey,keys in pairs(taxiByMap) do transferByMap[mapKey]=keys end
+  for _,key in ipairs(travelKeys) do
+    local node=nodes[key]
+    if node and node.mapKey then
+      transferByMap[node.mapKey]=transferByMap[node.mapKey] or {}
+      transferByMap[node.mapKey][#transferByMap[node.mapKey]+1]=key
+    end
+  end
+  for mapKey,transferKeys in pairs(transferByMap) do
+    for left=1,#transferKeys do
+      local firstKey=transferKeys[left]
+      local first=nodes[firstKey]
+      for right=left+1,#transferKeys do
+        local secondKey=transferKeys[right]
+        local second=nodes[secondKey]
+        edge(firstKey,secondKey,localCost(first,second),"walk")
+        edge(secondKey,firstKey,localCost(second,first),"walk")
+      end
+      for staticKey,staticNode in pairs(nodes) do
+        if staticKey~=firstKey and not staticNode.virtual and not staticNode.taxi and not staticNode.travel and staticNode.mapKey==mapKey then
+          edge(firstKey,staticKey,localCost(first,staticNode),"walk")
+          edge(staticKey,firstKey,localCost(staticNode,first),"walk")
         end
       end
     end
@@ -862,7 +997,35 @@ function Navigation:FindRoute(from,to)
     edge("START","FINISH",localCost(player,to),"walk")
     finishLinks=finishLinks+1
   end
-  if #graph.START==0 or finishLinks==0 then return nil end
+  local function incompleteRoute()
+    -- A ready hearth is still valuable advice when the character has not yet
+    -- opened enough taxi maps for a complete continuation.  Once the player
+    -- arrives at the bind location, RefreshRouteProgress rebuilds from live
+    -- data instead of pretending the rest of the trip is known.
+    local fallback
+    for index,port in ipairs(travelPorts) do
+      local key=travelKeys[index]
+      local node=key and nodes[key]
+      if node and node.mapKey~=player.key and (not fallback or port.cost<fallback.port.cost) then fallback={port=port,key=key,node=node} end
+    end
+    if fallback then
+      return {path={{key=fallback.key,node=fallback.node,mode=fallback.port.mode,label=fallback.port.label}},cost=fallback.port.cost,from=player.key,to=to.key,fallback=true}
+    end
+    local nearest
+    for _,key in ipairs(taxiSources) do
+      local node=nodes[key]
+      local cost=localCost(player,node)
+      if not nearest or cost<nearest.cost then nearest={key=key,node=node,cost=cost} end
+    end
+    if nearest then
+      return {
+        path={{key=nearest.key,node=nearest.node,mode="walk"}},cost=nearest.cost,from=player.key,to=to.key,fallback=true,
+        advisory={mode="taxi",label="Use a flight path toward "..tostring(to.title or to.key)},
+      }
+    end
+    return nil
+  end
+  if #graph.START==0 or finishLinks==0 then return incompleteRoute() end
   local distance,previous,visited={START=0},{},{}
   while true do
     local current,best=nil,huge
@@ -877,12 +1040,14 @@ function Navigation:FindRoute(from,to)
       end
     end
   end
-  if not distance.FINISH then return nil end
+  if not distance.FINISH then return incompleteRoute() end
   local path={} local current="FINISH"
   while current and current~="START" do
     local prior=previous[current]
     if not prior then break end
-    if current~="FINISH" then table.insert(path,1,{key=current,node=nodes[current],mode=prior.mode,label=prior.label}) end
+    if current~="FINISH" and nodes[current] and not nodes[current].virtual then
+      table.insert(path,1,{key=current,node=nodes[current],mode=prior.mode,label=prior.label})
+    end
     current=prior.node
   end
   return {path=path,cost=distance.FINISH,from=player.key,to=to.key}
@@ -890,8 +1055,16 @@ end
 
 function Navigation:OnTaxiCache(snapshot)
   if ZGV.db and snapshot then
-    local known=ZGV.db.profile.navigation.knownTaxi
+    local known=ZGV.db.profile.navigation.knownTaxi or {}
+    ZGV.db.profile.navigation.knownTaxi=known
     for key,node in pairs(ZGV.Compat.Taxi.known or {}) do known[key]={name=node.name,map=node.map and node.map.key,x=node.x,y=node.y} end
+  end
+  if self.waypoint then
+    self.route=self:FindRoute(nil,self.waypoint)
+    self.routeIndex=1
+    self:RefreshRouteProgress()
+    self:UpdateMapPin()
+    ZGV:LogInfo("navigation","taxi cache updated; route replanned")
   end
 end
 

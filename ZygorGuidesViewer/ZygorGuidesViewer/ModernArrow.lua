@@ -8,7 +8,8 @@ if type(UI) ~= "table" then return end
 local ROOT = ZGV.ARROWSDIR .. "Starlight\\"
 local SPECIALS = {
   arrived = { 1, 1 }, waiting = { 1, 2 }, upstairs = { 2, 1 }, downstairs = { 2, 2 },
-  error = { 3, 1 }, unreachable = { 4, 1 }, route = { 5, 1 }, taxi = { 5, 1 }, ship = { 6, 1 },
+  error = { 3, 1 }, unreachable = { 4, 1 }, route = { 5, 1 }, taxi = { 5, 1 },
+  hearth = { 5, 1 }, astral = { 5, 1 }, useitem = { 5, 1 }, spell = { 5, 1 }, ship = { 6, 1 },
 }
 
 local function setSpecial(texture, name)
