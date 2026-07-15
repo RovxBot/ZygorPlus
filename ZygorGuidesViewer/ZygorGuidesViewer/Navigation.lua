@@ -66,6 +66,7 @@ function Navigation:SetWaypoint(destination,title,markers)
   self.route=self:FindRoute(nil,target)
   self.routeIndex=1
   self:RefreshRouteProgress()
+  self:RememberRouteInputs()
   ZGV:LogInfo("navigation","waypoint "..tostring(target.title)..(self.route and " (route found)" or " (direct)"))
   self:AddTomTom(target)
   self:UpdateMapPin()
@@ -75,6 +76,7 @@ end
 
 function Navigation:ClearWaypoint()
   self.waypoint=nil self.route=nil self.routeIndex=1
+  self.routeInputSignature=nil self.routeOrigin=nil self.routeBuiltAt=nil
   self.markers={}
   for _,pin in ipairs(self.mapPins or {}) do pin:Hide() end
   for _,line in ipairs(self.mapLines or {}) do line:Hide() end
@@ -516,13 +518,17 @@ function Navigation:GetRouteLinePoints()
   end
   local player=ZGV.Compat.Map:GetPlayerPosition("player")
   if player and player.valid then append(player) end
+  local hasRoute=self.route and self.route.path
   local first=self.routeIndex or 1
   for index,entry in ipairs(self.route and self.route.path or {}) do
     if index>=first and entry.node then
       append(self:ResolveTarget({mapKey=entry.node.mapKey,x=entry.node.x,y=entry.node.y,title=entry.node.title}))
     end
   end
-  append(self.waypoint)
+  -- Without a route, joining different map keys is a fabricated straight
+  -- line through terrain and zone walls.  Wait for a real route refresh and
+  -- show no stroke rather than presenting that line as navigable geometry.
+  if hasRoute or (player and self.waypoint and player.key==self.waypoint.key) then append(self.waypoint) end
   return points
 end
 
@@ -829,6 +835,120 @@ function Navigation:GetAvailableTravelPorts(data)
   return ports
 end
 
+local function routePathSummary(route)
+  local parts={}
+  for _,entry in ipairs(route and route.path or {}) do
+    parts[#parts+1]=tostring(entry.mode or "walk")..":"..tostring(entry.node and (entry.node.title or entry.node.mapKey) or entry.key)
+  end
+  if route and route.advisory then parts[#parts+1]="advisory:"..tostring(route.advisory.mode) end
+  return #parts>0 and table.concat(parts," > ") or "direct"
+end
+
+-- Route inputs can change without the selected guide goal changing: the taxi
+-- cache is restored late in startup, a flight map discovers another node, a
+-- travel cooldown becomes ready, or an option is toggled.  Runtime correctly
+-- deduplicates unchanged waypoints, so Navigation owns this smaller signature
+-- and rebuilds only when the travel graph itself has changed.
+function Navigation:GetRouteInputSignature(player)
+  player=player or (ZGV.Compat and ZGV.Compat.Map and ZGV.Compat.Map:GetPlayerPosition("player")) or {}
+  local waypoint=self.waypoint or {}
+  local profile=ZGV.db and ZGV.db.profile and ZGV.db.profile.navigation or {}
+  local taxi=ZGV.Compat and ZGV.Compat.Taxi
+  local parts={
+    tostring(player.key),tostring(waypoint.key),tostring(waypoint.x),tostring(waypoint.y),
+    tostring(taxi and taxi.revision or 0),
+    tostring(profile.useTaxi~=false),tostring(profile.useHearth~=false),
+    tostring(profile.useAstralRecall~=false),tostring(profile.useTravelItems~=false),
+  }
+  local travel={}
+  for _,port in ipairs(self:GetAvailableTravelPorts(ZGV.Data and ZGV.Data.routes)) do
+    travel[#travel+1]=tostring(port.mode)..":"..tostring(port.destination and port.destination.mapKey)
+  end
+  table.sort(travel)
+  parts[#parts+1]=table.concat(travel,",")
+  return table.concat(parts,"|"),player
+end
+
+function Navigation:RememberRouteInputs(player)
+  local signature,resolvedPlayer=self:GetRouteInputSignature(player)
+  self.routeInputSignature=signature
+  player=resolvedPlayer or player
+  if player and player.key then
+    self.routeOrigin={
+      key=player.key,mapKey=player.key,x=player.x,y=player.y,
+      continent=player.continent,zone=player.zone,floor=player.floor,
+    }
+  end
+  self.routeBuiltAt=type(GetTime)=="function" and GetTime() or 0
+end
+
+function Navigation:RebuildRoute(reason,player)
+  if self.rebuildingRoute or not self.waypoint then return false end
+  self.rebuildingRoute=true
+  player=player or ZGV.Compat.Map:GetPlayerPosition("player")
+  if not player or not player.key then self.rebuildingRoute=nil return false end
+  self.route=self:FindRoute(player,self.waypoint)
+  self.routeIndex=1
+  self:RefreshRouteProgress()
+  self:RememberRouteInputs(player)
+  self.rebuildingRoute=nil
+  self:UpdateMapPin()
+  ZGV:LogInfo("navigation","route refreshed: "..tostring(reason or "inputs").."; "..routePathSummary(self.route),{
+    from=player and player.key,to=self.waypoint and self.waypoint.key,
+    taxiRevision=ZGV.Compat and ZGV.Compat.Taxi and ZGV.Compat.Taxi.revision or 0,
+  })
+  ZGV:Fire("ZGV_ARROW_UPDATED",self:GetArrowState())
+  return true
+end
+
+function Navigation:QueueRouteRefresh(reason,delay)
+  if not self.waypoint then return false end
+  self.pendingRouteReason=self.pendingRouteReason and (self.pendingRouteReason..","..tostring(reason)) or tostring(reason or "event")
+  if self.routeRefreshTimer then return true end
+  local function refresh()
+    Navigation.routeRefreshTimer=nil
+    local pending=Navigation.pendingRouteReason
+    Navigation.pendingRouteReason=nil
+    Navigation:RebuildRoute(pending)
+  end
+  local timer=ZGV.Compat and ZGV.Compat.Timer
+  if timer and type(timer.NewTimer)=="function" then self.routeRefreshTimer=timer:NewTimer(delay or .15,refresh)
+  else refresh() end
+  return true
+end
+
+function Navigation:HasMovedEnoughForRoute(player)
+  local origin=self.routeOrigin
+  if not origin or not player or not player.key then return false end
+  if origin.key~=player.key then return true end
+  local result=ZGV.Compat.Map:GetDistance(origin,player)
+  if result and result.ok and result.distanceKnown and type(result.distance)=="number" then return result.distance>50 end
+  if origin.x and origin.y and player.x and player.y then
+    local dx,dy=player.x-origin.x,player.y-origin.y
+    return math.sqrt(dx*dx+dy*dy)>.02
+  end
+  return false
+end
+
+function Navigation:MaybeRefreshRoute(now)
+  if not self.waypoint or self.rebuildingRoute then return false end
+  now=tonumber(now) or (type(GetTime)=="function" and GetTime() or 0)
+  local signature,player=self:GetRouteInputSignature()
+  if not player or not player.key then return false end
+  if signature~=self.routeInputSignature then return self:RebuildRoute("travel inputs changed",player) end
+  if now-(tonumber(self.routeBuiltAt) or 0)>=5 and self:HasMovedEnoughForRoute(player) then
+    return self:RebuildRoute("player moved",player)
+  end
+  return false
+end
+
+function Navigation:OnTravelEvent(event)
+  -- Legacy map state settles just after the zone event.  Coalesce the burst
+  -- from a border/loading transition, then hard-refresh like Classic Rover's
+  -- UpdateNow handler does for these same events.
+  self:QueueRouteRefresh(event,.15)
+end
+
 function Navigation:FindRoute(from,to)
   local data=ZGV.Data.routes
   if not data or not to then return nil end
@@ -892,7 +1012,11 @@ function Navigation:FindRoute(from,to)
     -- Map-normalized distance is only used to select among exits on the same
     -- map; it intentionally cannot make an inter-zone border cheaper than a
     -- nearby route node.
-    return math.max(3,math.sqrt(dx*dx+dy*dy)*100)
+    -- This value represents travel time, not percentage-of-map distance.
+    -- The old *100 scale made a run across most of an Outland zone appear
+    -- cheaper than boarding a learned flight.  *600 is a conservative mounted
+    -- traversal estimate and leaves short city approaches inexpensive.
+    return math.max(3,math.sqrt(dx*dx+dy*dy)*600)
   end
   -- The reference Rover graph adds ready hearths and travel items as edges
   -- from the live player position.  Keep that outcome, but never take the
@@ -1053,19 +1177,13 @@ function Navigation:FindRoute(from,to)
   return {path=path,cost=distance.FINISH,from=player.key,to=to.key}
 end
 
-function Navigation:OnTaxiCache(snapshot)
+function Navigation:OnTaxiCache(_,snapshot)
   if ZGV.db and snapshot then
     local known=ZGV.db.profile.navigation.knownTaxi or {}
     ZGV.db.profile.navigation.knownTaxi=known
     for key,node in pairs(ZGV.Compat.Taxi.known or {}) do known[key]={name=node.name,map=node.map and node.map.key,x=node.x,y=node.y} end
   end
-  if self.waypoint then
-    self.route=self:FindRoute(nil,self.waypoint)
-    self.routeIndex=1
-    self:RefreshRouteProgress()
-    self:UpdateMapPin()
-    ZGV:LogInfo("navigation","taxi cache updated; route replanned")
-  end
+  if self.waypoint then self:RebuildRoute(snapshot and snapshot.restored and "saved taxi cache restored" or "taxi cache updated") end
 end
 
 function Navigation:OnStartup()
@@ -1077,8 +1195,12 @@ function Navigation:OnStartup()
   if ZGV.Compat and ZGV.Compat.Timer then
     self.ticker=ZGV.Compat.Timer:NewTicker(.1,function()
       if Navigation.waypoint then
-        if Navigation:RefreshRouteProgress() then Navigation:UpdateMapPin() end
         local now=GetTime()
+        if now-(Navigation.lastRouteInputCheck or 0)>=1 then
+          Navigation.lastRouteInputCheck=now
+          Navigation:MaybeRefreshRoute(now)
+        end
+        if Navigation:RefreshRouteProgress() then Navigation:UpdateMapPin() end
         -- Animation is intentionally cheap: geometry is refreshed less often,
         -- while only the highlight texture coordinates advance every tick.
         Navigation:UpdateMinimapLines()
@@ -1114,6 +1236,12 @@ function Navigation:OnMapEvent()
 end
 
 ZGV:RegisterEvent("WORLD_MAP_UPDATE",Navigation,"OnMapEvent")
+for _,event in ipairs({"PLAYER_ENTERING_WORLD","ZONE_CHANGED","ZONE_CHANGED_NEW_AREA","ZONE_CHANGED_INDOORS"}) do
+  ZGV:RegisterEvent(event,Navigation,"OnTravelEvent")
+end
+if type(ZGV.RegisterCallback)=="function" then
+  ZGV:RegisterCallback("ZGV_OPTIONS_CHANGED",Navigation,function(self) self:QueueRouteRefresh("options changed",0) end)
+end
 ZGV:AddMessageHandler("SKIN_UPDATED",function()
   if Navigation.waypoint then Navigation:UpdateMapPin() end
 end)

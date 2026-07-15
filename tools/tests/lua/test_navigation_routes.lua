@@ -11,6 +11,7 @@ local continents={
   ["Terokkar Forest/0"]=3,["Shattrath City/0"]=3,
   ["Elwynn Forest/0"]=2,["Stormwind City/0"]=2,
   ["Borean Tundra/0"]=4,["Dragonblight/0"]=4,["Unlinked Zone/0"]=1,["Remote Zone/0"]=1,
+  ["Nagrand/0"]=3,["Zangarmarsh/0"]=3,["Blade's Edge Mountains/0"]=3,
 }
 function map:Resolve(key)
   if type(key) == "table" then return key end
@@ -28,6 +29,8 @@ local taxiNodes={
   {key="stormwind",mapKey="Stormwind City/0",name="Stormwind",title="Stormwind Flight Master",x=.66,y=.62},
   {key="valiance",mapKey="Borean Tundra/0",name="Valiance Keep",title="Valiance Keep Flight Master",x=.58,y=.68},
   {key="wyrmrest",mapKey="Dragonblight/0",name="Wyrmrest Temple",title="Wyrmrest Temple Flight Master",x=.60,y=.55},
+  {key="garadar",mapKey="Nagrand/0",name="Garadar",title="Garadar Flight Master",x=.5719,y=.3525},
+  {key="zabrajin",mapKey="Zangarmarsh/0",name="Zabra'jin",title="Zabra'jin Flight Master",x=.3307,y=.5107},
 }
 Compat.Map=map
 Compat.Taxi={GetKnownStaticNodes=function() return taxiNodes end}
@@ -40,10 +43,16 @@ ZygorGuidesViewer={
       shattrath_gate={mapKey="Shattrath City/0",x=.762,y=.773,title="Shattrath City Gate"},
       stormwind_harbor={mapKey="Stormwind City/0",x=.184,y=.254,title="Stormwind Harbor"},
       valiance_dock={mapKey="Borean Tundra/0",x=.590,y=.684,title="Valiance Keep"},
+      nagrand_blade={mapKey="Nagrand/0",x=.285,y=.060,title="Border to Blade's Edge Mountains"},
+      blade_nagrand={mapKey="Blade's Edge Mountains/0",x=.285,y=.939,title="Border to Nagrand"},
+      blade_zangar={mapKey="Blade's Edge Mountains/0",x=.520,y=.988,title="Border to Zangarmarsh"},
+      zangar_blade={mapKey="Zangarmarsh/0",x=.687,y=.329,title="Border to Blade's Edge Mountains"},
     },
     links={
       {"terokkar_gate","shattrath_gate","enter",38,nil,"leave"},
       {"stormwind_harbor","valiance_dock","boat",120,"Alliance"},
+      {"nagrand_blade","blade_nagrand","cross",38},
+      {"blade_zangar","zangar_blade","cross",38},
     },
     portkeys={
       {item=6948,destination="_HEARTH",cost=80,mode="hearth"},
@@ -55,6 +64,7 @@ ZygorGuidesViewer={
 ZGV=ZygorGuidesViewer
 function ZGV:RegisterModule(name, defaults) self[name]=defaults return defaults end
 function ZGV:RegisterEvent() end
+function ZGV:RegisterCallback() end
 function ZGV:AddMessageHandler() end
 function ZGV:Fire() end
 function ZGV:LogInfo() end
@@ -98,6 +108,38 @@ assertEqual(sawBoat,true,"route connects flight path to boat")
 route=assert(Navigation:FindRoute(nil,{key="Stormwind City/0",x=.50,y=.60,title="Stormwind objective"}),"Astral Recall route was not found")
 assertEqual(route.path[1].mode,"astral","ready Astral Recall is preferred over Hearthstone")
 assertEqual(route.path[1].label,"Stormwind","Astral Recall names the bound destination")
+
+-- Regression from live testing: an active Nagrand goal in Zangarmarsh must
+-- prefer the learned Garadar -> Zabra'jin flight over the two-border detour
+-- through Blade's Edge Mountains.
+player={key="Nagrand/0",valid=true,x=.55,y=.38}
+route=assert(Navigation:FindRoute(nil,{key="Zangarmarsh/0",x=.31,y=.54,title="Zangarmarsh quest"}),"Nagrand flight route was not found")
+assertEqual(route.path[1].node.title,"Garadar Flight Master","Nagrand route starts at Garadar")
+assertEqual(route.path[1].mode,"walk","player is directed to Garadar")
+assertEqual(route.path[2].node.title,"Zabra'jin Flight Master","Nagrand route selects Zabra'jin")
+assertEqual(route.path[2].mode,"taxi","Garadar to Zabra'jin is a flight leg")
+
+-- A taxi-cache revision must invalidate an otherwise unchanged Runtime
+-- waypoint.  This is the automatic refresh that previously required /reload.
+Navigation.waypoint={key="Zangarmarsh/0",mapKey="Zangarmarsh/0",x=.31,y=.54,title="Zangarmarsh quest"}
+Navigation.route=route
+Navigation.routeIndex=1
+Compat.Taxi.revision=1
+Navigation:RememberRouteInputs(player)
+local refreshReason
+local realRebuild=Navigation.RebuildRoute
+function Navigation:RebuildRoute(reason,livePlayer)
+  refreshReason=reason
+  return realRebuild(self,reason,livePlayer)
+end
+Compat.Taxi.revision=2
+Navigation:MaybeRefreshRoute(10)
+assertEqual(refreshReason,"travel inputs changed","taxi cache revision refreshes active route")
+refreshReason=nil
+player={key="Zangarmarsh/0",valid=true,x=.32,y=.53}
+Navigation:OnTravelEvent("ZONE_CHANGED_NEW_AREA")
+assertEqual(refreshReason,"ZONE_CHANGED_NEW_AREA","zone transition hard-refreshes active route")
+Navigation.RebuildRoute=realRebuild
 
 -- Even without a complete route graph, a ready travel ability remains useful
 -- advice.  The final continuation will be rebuilt from the live bind map.
