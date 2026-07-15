@@ -8,6 +8,7 @@ Taxi.open = Taxi.open or false
 Taxi.lastSnapshot = Taxi.lastSnapshot or { nodes = {}, byKey = {}, updatedAt = 0 }
 Taxi.known = Taxi.known or {}
 Taxi.knownNames = Taxi.knownNames or {}
+Taxi.revision = Taxi.revision or 0
 
 -- TaxiNodeName is returned as "Node, Zone" on the 3.3.5 client, while the
 -- static map-position data uses the node's stable display name.  Keep the
@@ -22,7 +23,10 @@ end
 
 function Taxi:RememberKnownName(name)
 	local key = name_key(name)
-	if key ~= "" then self.knownNames[key] = true end
+	if key ~= "" and not self.knownNames[key] then
+		self.knownNames[key] = true
+		self.revision = (tonumber(self.revision) or 0) + 1
+	end
 end
 
 function Taxi:IsKnownName(name)
@@ -213,6 +217,14 @@ function Taxi:Startup(saved)
 		end
 	end
 	self.saved = saved
+	-- InitialFlightPaths binds SavedVariables after the addon modules have
+	-- started.  Notify Navigation now that the learned-node set is usable;
+	-- otherwise an already selected guide keeps the route calculated before
+	-- this cache existed until the next /reload or manual waypoint change.
+	Compat:Fire("TAXI_CACHE_UPDATED", {
+		nodes = {}, byKey = {}, updatedAt = Compat.Now(), available = true,
+		restored = true, revision = self.revision,
+	})
 	return true
 end
 

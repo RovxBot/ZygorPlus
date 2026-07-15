@@ -1692,7 +1692,7 @@ You Reached Skill 375 in Alchemy.
 ]])
 ZygorGuidesViewer:RegisterGuide("Profession Guides\\Blacksmithing\\Blacksmithing (1-375)",{
 author="support@zygorguides.com",
-condition_suggested=function() return skill('Blacksmithing') > 300 end,
+condition_suggested=function() return skill('Blacksmithing') > 0 end,
 description="This guide will walk you through leveling your Blacksmithing skill from 1-375.",
 },[[
 step
@@ -4401,7 +4401,7 @@ Reach Skill 300 in Cooking |skill Cooking,300 |goto Azshara 60.20,40.50
 ]])
 ZygorGuidesViewer:RegisterGuide("Profession Guides\\Cooking\\Cooking (300-375)",{
 author="support@zygorguides.com",
-condition_suggested=function() return skill('Cooking') > 0 end,
+condition_suggested=function() return skill('Cooking') >= 300 and skill('Cooking') < 375 end,
 description="This guide will walk you through leveling your Cooking skill from 300-375.",
 },[[
 step
@@ -8377,7 +8377,7 @@ Reach Skill 300 First in Aid |skill First Aid,300
 ]])
 ZygorGuidesViewer:RegisterGuide("Profession Guides\\First Aid\\First Aid (300-375)",{
 author="support@zygorguides.com",
-condition_suggested=function() return skill('Alchemy') > 0 end,
+condition_suggested=function() return skill('First Aid') >= 300 and skill('First Aid') < 375 end,
 description="This guide will walk you through leveling your First Aid skill from 300-375.",
 },[[
 step
@@ -8856,7 +8856,7 @@ Reach Skill 300 in Herbalism |skill Herbalism,300
 ]])
 ZygorGuidesViewer:RegisterGuide("Profession Guides\\Herbalism\\Herbalism (300-375)",{
 author="support@zygorguides.com",
-condition_suggested=function() return skill('Alchemy') > 0 end,
+condition_suggested=function() return skill('Herbalism') >= 300 and skill('Herbalism') < 375 end,
 description="This guide will walk you through leveling your Herbalism skill from 300-375.",
 },[[
 step
@@ -12236,7 +12236,7 @@ Reach Skill 300 in Mining |skill Mining,300
 ]])
 ZygorGuidesViewer:RegisterGuide("Profession Guides\\Mining\\Mining (300-375)",{
 author="support@zygorguides.com",
-condition_suggested=function() return skill('Mining') > 300 end,
+condition_suggested=function() return skill('Mining') >= 300 and skill('Mining') < 375 end,
 description="This guide will walk you through leveling your Mining skill from 300-375.",
 },[[
 step
@@ -12749,7 +12749,7 @@ You can find more around: |notinsticky
 ]])
 ZygorGuidesViewer:RegisterGuide("Profession Guides\\Skinning\\Skinning (300-375)",{
 author="support@zygorguides.com",
-condition_suggested=function() return skill('Skinning') > 300 end,
+condition_suggested=function() return skill('Skinning') >= 300 and skill('Skinning') < 375 end,
 description="This guide will walk you through leveling your Skinning skill from 300-375.",
 },[[
 step

@@ -64,6 +64,29 @@ class WotLKDataTests(unittest.TestCase):
             self.assertIn(contract, profession)
         self.assertIn('Compat:RegisterEvent("TRADE_SKILL_UPDATE"', profession)
 
+    def test_profession_guide_suggestions_use_the_matching_skill_range(self) -> None:
+        expected = {
+            "Profession Guides\\Blacksmithing\\Blacksmithing (1-375)": "skill('Blacksmithing') > 0",
+            "Profession Guides\\Cooking\\Cooking (300-375)": "skill('Cooking') >= 300 and skill('Cooking') < 375",
+            "Profession Guides\\First Aid\\First Aid (300-375)": "skill('First Aid') >= 300 and skill('First Aid') < 375",
+            "Profession Guides\\Herbalism\\Herbalism (300-375)": "skill('Herbalism') >= 300 and skill('Herbalism') < 375",
+            "Profession Guides\\Mining\\Mining (300-375)": "skill('Mining') >= 300 and skill('Mining') < 375",
+            "Profession Guides\\Skinning\\Skinning (300-375)": "skill('Skinning') >= 300 and skill('Skinning') < 375",
+        }
+        roots = (
+            REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer_GuidesAlliance" / "Professions" / "ZygorProfessionsAllianceCLASSIC.lua",
+            REPO / "ZygorGuidesViewer" / "ZygorGuidesViewer_GuidesHorde" / "Professions" / "ZygorProfessionsHordeCLASSIC.lua",
+        )
+        for root in roots:
+            text = root.read_text(encoding="utf-8")
+            for title, expression in expected.items():
+                pattern = (
+                    r'ZygorGuidesViewer:RegisterGuide\("' + re.escape(title.replace("\\", "\\\\")) + r'",\{\s*'
+                    r'author="[^"]+",\s*condition_suggested=function\(\) return '
+                    + re.escape(expression) + r' end,'
+                )
+                self.assertRegex(text, pattern, (root.name, title))
+
     def test_dungeon_preview_uses_wotlk_ids_and_retained_artwork(self) -> None:
         preview = (ADDON / "DungeonPreview.lua").read_text(encoding="utf-8")
         self.assertIn('[189]={name="Scarlet Monastery"', preview)

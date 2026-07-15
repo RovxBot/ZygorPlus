@@ -110,6 +110,11 @@ ZGV.db.profile.navigation.enabled = true
 ZGV.db.profile.pointer = { showWorldMap = true, showMinimap = true, showLines = false }
 assertEqual(#Navigation:GetRouteLinePoints(), 0, "route-line option suppresses world-map route geometry")
 ZGV.db.profile.pointer.showLines = true
+assertEqual(#Navigation:GetRouteLinePoints(), 2, "same-map direct target keeps route geometry")
+local savedWaypoint = Navigation.waypoint
+Navigation.waypoint = {key="zone:other",mapKey="zone:other",continent=1,zone=2,x=.7,y=.7,title="Other zone"}
+assertEqual(#Navigation:GetRouteLinePoints(), 1, "unrouted cross-map target has no fabricated straight line")
+Navigation.waypoint = savedWaypoint
 
 local distance, distanceResult = Navigation:GetDistance(target)
 assertEqual(distance, nil, "unknown distance does not cross navigation API")

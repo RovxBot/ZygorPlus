@@ -141,4 +141,16 @@ assertEqual(glyphs[1].spellID, 54321, "Wrath glyph spell ID tuple position")
 assertEqual(glyphs[1].iconFileID, "Interface\\Icons\\INV_Glyph_MajorMage", "Wrath glyph icon tuple position")
 assertEqual(glyphs[1].tooltipIndex, nil, "Wrath glyph tuple has no tooltip index")
 
+-- Restoring the saved taxi list happens after modules have started.  The
+-- service must publish that cache revision so Navigation can rebuild an
+-- already selected guide route without requiring /reload.
+dofile(repo .. "/ZygorGuidesViewer/ZygorGuidesViewer/Compat/Taxi.lua")
+local Taxi = assert(services.Taxi)
+local firedBefore = #fired
+assertEqual(Taxi:Startup({Garadar=true,["Zabra'jin"]={name="Zabra'jin"}}), true, "saved taxi startup")
+assertEqual(Taxi.revision, 2, "saved taxi names advance cache revision")
+assertEqual(#fired, firedBefore + 1, "saved taxi startup publishes one update")
+assertEqual(fired[#fired].event, "TAXI_CACHE_UPDATED", "saved taxi update topic")
+assertEqual(fired[#fired].payload.restored, true, "saved taxi update identifies restoration")
+
 print("quest and auction compatibility tests passed")

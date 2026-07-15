@@ -18,7 +18,10 @@ local profileDefaults = {
   minimap={ x=-3, y=-2 },
   actionbar={ enabled=true, x=0, y=80, scale=1, locked=false, direction=2, quest=true, talk=true, kill=true, trash=false, hideInCombat=false },
   automation={ accept=true, progress=true, turnin=true, gossip=true, repair=true, sellGreys=false, equip=false, autoSelectReward=false, questRewardHint=true },
-  navigation={ enabled=true, useTomTom=true, knownTaxi={} },
+  -- Travel recommendations are advisory only.  They build a route from the
+  -- character's learned taxi points and ready travel abilities; no protected
+  -- item, spell or taxi action is ever invoked by the route planner.
+  navigation={ enabled=true, useTomTom=true, knownTaxi={}, useTaxi=true, useHearth=true, useAstralRecall=true, useTravelItems=true },
   map={ showCoords=true, poiEnabled=true, poiMode="quick", hideTypes={rare=false,treasure=false}, mapIcons=true, minimapIcons=true },
   pointer={ audio=true, meters=false, freeze=false, showMinimap=true, showWorldMap=true, showLines=true, autoCorpse=true },
   -- Questie owns the Blizzard quest-watch list when installed.  Zygor keeps

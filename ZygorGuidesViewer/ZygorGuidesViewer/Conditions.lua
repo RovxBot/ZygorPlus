@@ -107,6 +107,26 @@ function Conditions:Skill(name)
   return 0
 end
 
+-- `skillmax` is deliberately separate from `skill`: training Apprentice,
+-- Journeyman, and later ranks changes a profession's cap without changing
+-- its current value. The authored profession guides use it for exactly that
+-- trainer-rank check (for example, Engineering 1/75 after Apprentice).
+function Conditions:SkillMax(name)
+  name=tostring(name or ""):lower()
+  local service=ZGV.Compat and ZGV.Compat.Profession
+  if service and type(service.GetSkill)=="function" then
+    local ok,result=pcall(service.GetSkill,service,name)
+    if ok and type(result)=="table" then
+      return tonumber(result.maxSkillLevel or result.max or result.maximum) or 0
+    end
+  end
+  for index=1,(GetNumSkillLines and GetNumSkillLines() or 0) do
+    local skillName,isHeader,_,_,_,_,maximum=GetSkillLineInfo(index)
+    if not isHeader and skillName and skillName:lower()==name then return tonumber(maximum) or 0 end
+  end
+  return 0
+end
+
 function Conditions:Reputation(name)
   if ZGV.Faction and ZGV.Faction.GetReputation then
     local rep=ZGV.Faction:GetReputation(name)
@@ -241,7 +261,7 @@ bind("counthaveq","CountHaveQuests")
 bind("readyq","QuestReady")
 bind("readyallq","AllQuestsReady")
 bind("skill","Skill")
-bind("skillmax","Skill")
+bind("skillmax","SkillMax")
 bind("rep","Reputation")
 bind("repval","ReputationValue")
 bind("itemcount","ItemCount")
@@ -347,7 +367,7 @@ _G.raceclass=function(...) return Conditions:RaceClass(...) end
 _G.completedq=function(...) return Conditions:CompletedQuest(...) end
 _G.havequest=function(...) return Conditions:HaveQuest(...) end
 _G.skill=function(...) return Conditions:Skill(...) end
-_G.skillmax=function(...) return Conditions:Skill(...) end
+_G.skillmax=function(...) return Conditions:SkillMax(...) end
 _G.rep=function(...) return Conditions:Reputation(...) end
 _G.itemcount=function(...) return Conditions:ItemCount(...) end
 _G.knownspell=function(...) return Conditions:KnownSpell(...) end

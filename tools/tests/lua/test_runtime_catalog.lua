@@ -23,7 +23,8 @@ function ZGV:RegisterModule(name, module)
   self[name] = module
   return module
 end
-function ZGV:RegisterEvent() end
+local registeredEvents={}
+function ZGV:RegisterEvent(event,owner,method) registeredEvents[event]={owner=owner,method=method} end
 function ZGV:RegisterCallback() end
 function ZGV:Fire() end
 function ZGV:LogInfo() end
@@ -106,17 +107,45 @@ end
 function ZGV.Conditions:ItemCount() return 0 end
 local hasShadowyDisguise=false
 function ZGV.Conditions:HaveBuff(value) return hasShadowyDisguise and (value==32756 or tostring(value):find("Shadowy Disguise",1,true)~=nil) end
-function ZGV.Conditions:Skill() return 0 end
+local skillRanks,skillMaximums={},{}
+function ZGV.Conditions:Skill(name) return skillRanks[tostring(name or ""):lower()] or 0 end
+function ZGV.Conditions:SkillMax(name) return skillMaximums[tostring(name or ""):lower()] or 0 end
 function ZGV.Conditions:Reputation() return 0 end
 
 dofile(addon .. "Runtime.lua")
 local Runtime = ZGV.Runtime
 Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionIssues = {} }
+assert(registeredEvents.SKILL_LINES_CHANGED and registeredEvents.TRADE_SKILL_UPDATE,
+  "runtime watches profession changes from the 3.3.5a client")
 
 -- Terokkar's disguise retry must remain on its visible `havebuff` objective
 -- until the player has the actual aura.  This is the gate that previously
 -- auto-ran through blank steps and jumped back to its retry label.
 dofile(addon .. "Parser.lua")
+local trainerGuide=assert(ZGV.Parser:ParseEntry({
+  id="engineering-rank",title="Engineering rank",header={},raw=[[
+step
+Train Apprentice Engineering |skillmax Engineering,75 |goto Orgrimmar/0 76.18,25.18
+step
+Open Your Engineering Crafting Panel
+]]
+}))
+local trainerGoal=trainerGuide.steps[1].goals[1]
+assertEqual(trainerGoal.action,"skillmax","trainer rank is parsed as a profession-cap goal")
+skillRanks.engineering,skillMaximums.engineering=75,0
+assertEqual(Runtime:IsGoalComplete(trainerGoal,1,1),false,
+  "current Engineering points do not falsely satisfy an untrained rank")
+skillMaximums.engineering=75
+local trainerComplete,trainerReason=Runtime:IsGoalComplete(trainerGoal,1,1)
+assertEqual(trainerComplete,true,"Apprentice Engineering completes when its 75-point cap is trained")
+assertEqual(trainerReason,"skillmax","trainer completion reports the profession-cap source")
+Runtime.currentGuide,Runtime.currentStep=trainerGuide,1
+Runtime.manual={}
+Runtime.lastAdvance=GetTime()
+Runtime:OnEvent("SKILL_LINES_CHANGED")
+assertEqual(Runtime.currentStep,2,"training immediately advances to the next profession stage")
+skillRanks.engineering,skillMaximums.engineering=0,0
+
 local shadowyGuide=assert(ZGV.Parser:ParseEntry({
   id="shadowy-runtime",title="Shadowy runtime",header={},raw=[[
 step
@@ -165,6 +194,64 @@ Runtime.currentGuide=cityGuide
 local cityState=Runtime:GetStepState(cityGuide.steps[1],1)
 assertEqual(cityState.required,1,"city transition is a required, completable travel step")
 assertEqual(cityState.complete,true,"alternate city entry completes the authored gate step")
+Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionIssues = {} }
+
+-- A path-following step can contain several `goto` points. Reaching or
+-- manually completing the current point must choose the next point without
+-- requiring a guide-step change. Completing the final point manually must
+-- then advance immediately and rebuild navigation for the following step.
+local waypointHistory={}
+local arrivedFirst=false
+ZGV.Navigation={
+  waypoint=nil,
+  IsArrived=function(_,destination) return arrivedFirst and destination and destination.x==.10 end,
+  IsMapTransitionComplete=function() return false end,
+  SetWaypoint=function(self,destination,title)
+    self.waypoint=destination
+    waypointHistory[#waypointHistory+1]={destination=destination,title=title}
+    return true
+  end,
+  ClearWaypoint=function(self) self.waypoint=nil end,
+}
+Runtime.manual={}
+Runtime.waypointGoalKey=nil
+Runtime.currentGuide={id="movement-path",title="Movement path",conditionIssues={},steps={
+  {goals={
+    {action="goto",text="Follow the path",destination={mapKey="Nagrand/0",x=.10,y=.10}},
+    {action="goto",text="Follow the path up",destination={mapKey="Nagrand/0",x=.20,y=.20}},
+  }},
+  {goals={
+    {action="goto",text="Enter the cave",destination={mapKey="Nagrand/0",x=.30,y=.30}},
+  }},
+}}
+Runtime.currentStep=1
+Runtime.lastAdvance=0
+Runtime:UpdateWaypoint()
+assertEqual(waypointHistory[#waypointHistory].destination.x,.10,"first path point is selected")
+arrivedFirst=true
+Runtime:Tick()
+assertEqual(Runtime.currentStep,1,"reaching an intermediate path point keeps its guide step active")
+assertEqual(waypointHistory[#waypointHistory].destination.x,.20,"arrival points navigation at the next path point")
+
+Runtime.manual={}
+Runtime.waypointGoalKey=nil
+Runtime.currentStep=1
+arrivedFirst=false
+Runtime:UpdateWaypoint()
+assert(Runtime:ActivateGoal(1,1),"manual completion accepts the first path point")
+assertEqual(Runtime.currentStep,1,"manual intermediate completion keeps its guide step active")
+assertEqual(waypointHistory[#waypointHistory].destination.x,.20,"manual completion points to the next path point")
+assert(Runtime:ActivateGoal(1,2),"manual completion accepts the final path point")
+assertEqual(Runtime.currentStep,2,"manual final path completion advances immediately")
+assertEqual(waypointHistory[#waypointHistory].destination.x,.30,"manual final completion points to the next guide step")
+ZGV.Navigation={
+  IsArrived=function() return false end,
+  IsMapTransitionComplete=function(_,transition)
+    return transition and transition.kind=="enter" and transition.mapKey=="Stormwind City/0"
+  end,
+  SetWaypoint=function() return true end,
+  ClearWaypoint=function() end,
+}
 Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionIssues = {} }
 
 -- Manual Next must honour conditional branch order instead of forcing the
