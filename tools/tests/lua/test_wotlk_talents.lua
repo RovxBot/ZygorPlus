@@ -88,6 +88,14 @@ playerTalents=savedPlayerTalents
 Talent:OnEvent("PLAYER_TALENT_UPDATE")
 assertEqual(Talent.dataReady,true,"talent update retries deferred initialization")
 assertEqual(Talent:GetSelected(false).title,"Deferred (1/0/0)","deferred initialization selects the build")
+-- ADDON_LOADED can precede profile initialization on the 3.3.5 client. The
+-- selection service must defer persistence rather than dereference ZGV.db.
+local savedDatabase=ZygorGuidesViewer.db
+Talent.selectedByContext={}
+ZygorGuidesViewer.db=nil
+assertEqual(Talent:GetSelected(false),nil,"selection tolerates an uninitialized profile")
+Talent:OnEvent("PLAYER_TALENT_UPDATE")
+ZygorGuidesViewer.db=savedDatabase
 Talent.builds={}
 Talent.byClass={}
 Talent.selected=nil

@@ -19,6 +19,7 @@ from validate_addons import resolve_exact_case, validate
 
 
 FIXED_ZIP_TIME = (2000, 1, 1, 0, 0, 0)
+RELEASE_CHANNELS = frozenset(("alpha", "stable"))
 
 
 def load_manifest(path: Path) -> dict[str, object]:
@@ -34,6 +35,11 @@ def load_manifest(path: Path) -> dict[str, object]:
         value = manifest.get(key)
         if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9._-]+", value):
             raise SystemExit(f"release manifest {key} must contain only letters, digits, dot, underscore, and hyphen")
+    channel = manifest.get("release_channel", "stable")
+    if not isinstance(channel, str) or channel not in RELEASE_CHANNELS:
+        allowed = ", ".join(sorted(RELEASE_CHANNELS))
+        raise SystemExit(f"release manifest release_channel must be one of: {allowed}")
+    manifest["release_channel"] = channel
     bundle_root = manifest.get("bundle_root")
     if bundle_root is not None:
         if not isinstance(bundle_root, str) or not bundle_root:
@@ -88,6 +94,17 @@ def load_manifest(path: Path) -> dict[str, object]:
             if first_part not in roots:
                 raise SystemExit(f"guide registration filter is outside addon_roots: {pattern}")
     return manifest
+
+
+def requires_live_parity(manifest: dict[str, object]) -> bool:
+    """Return whether this release channel may publish before live sign-off.
+
+    Alpha releases are installable feedback builds: static validation and all
+    automated implementation checks remain mandatory, while the acceptance
+    registry truthfully records outstanding client scenarios. Stable releases
+    require every one of those scenarios to be signed off.
+    """
+    return manifest["release_channel"] == "stable"
 
 
 def resolve_bundle_root(repo_root: Path, manifest: dict[str, object]) -> Path:
@@ -192,12 +209,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"release blocked: validator found {result.errors} error(s) and {result.warnings} warning(s)", file=sys.stderr)
             print("run: python3 tools/validate_addons.py --strict", file=sys.stderr)
             return 1
-        parity_errors = evaluate_release_parity(tools_root / "release_parity.json", require_live=True)
+        require_live = requires_live_parity(manifest)
+        parity_errors = evaluate_release_parity(tools_root / "release_parity.json", require_live=require_live)
         if parity_errors:
-            print("release blocked: feature parity gate is incomplete", file=sys.stderr)
+            gate = "stable feature-parity" if require_live else "implementation feature-parity"
+            print(f"release blocked: {gate} gate is incomplete", file=sys.stderr)
             for error in parity_errors:
                 print(f"- {error}", file=sys.stderr)
-            print("run: python3 tools/check_release_parity.py", file=sys.stderr)
+            command = "python3 tools/check_release_parity.py" if require_live else "python3 tools/check_release_parity.py --allow-live-pending"
+            print(f"run: {command}", file=sys.stderr)
             return 1
 
     total_bytes = sum(path.stat().st_size for path, _ in files)

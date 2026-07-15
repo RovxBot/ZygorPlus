@@ -34,7 +34,7 @@ jobs:
           sudo apt-get install --yes lua5.1
           sudo ln -sf "$(command -v lua5.1)" /usr/local/bin/lua
 
-      - name: Verify release version and tag availability
+      - name: Verify release metadata and tag availability
         id: release_metadata
         env:
           GH_TOKEN: ${{ github.token }}
@@ -42,9 +42,17 @@ jobs:
           set -euo pipefail
           VERSION="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8"))["version"])')"
           if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "tools/release.json must contain a final X.Y.Z release version; found '$VERSION'." >&2
+            echo "tools/release.json must contain an X.Y.Z release version; found '$VERSION'." >&2
             exit 1
           fi
+          RELEASE_CHANNEL="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8")).get("release_channel", "stable"))')"
+          case "$RELEASE_CHANNEL" in
+            alpha|stable) ;;
+            *)
+              echo "tools/release.json has unsupported release_channel '$RELEASE_CHANNEL'." >&2
+              exit 1
+              ;;
+          esac
           RELEASE_TAG="v$VERSION"
           if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null; then
             echo "The tag $RELEASE_TAG already exists." >&2
@@ -55,7 +63,9 @@ jobs:
             exit 1
           fi
           printf 'RELEASE_TAG=%s\n' "$RELEASE_TAG" >> "$GITHUB_ENV"
+          printf 'RELEASE_CHANNEL=%s\n' "$RELEASE_CHANNEL" >> "$GITHUB_ENV"
           printf 'release_tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          printf 'release_channel=%s\n' "$RELEASE_CHANNEL" >> "$GITHUB_OUTPUT"
 
       - name: Run automated tests
         run: |
@@ -65,11 +75,15 @@ jobs:
           done
           python3 -m unittest discover -s tools/tests -v
 
-      - name: Run strict release gates
+      - name: Run release gates
         run: |
           set -euo pipefail
           python3 tools/validate_addons.py --strict
-          python3 tools/check_release_parity.py
+          if [[ "$RELEASE_CHANNEL" == "stable" ]]; then
+            python3 tools/check_release_parity.py
+          else
+            python3 tools/check_release_parity.py --allow-live-pending
+          fi
 
       - name: Create deterministic release archive
         run: python3 tools/package_release.py
@@ -92,7 +106,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag --annotate "$RELEASE_TAG" --message "ZygorPlus ${RELEASE_TAG#v}" "$GITHUB_SHA"
+          git tag --annotate "$RELEASE_TAG" --message "ZygorPlus ${RELEASE_TAG#v} (${RELEASE_CHANNEL})" "$GITHUB_SHA"
           git push origin "refs/tags/$RELEASE_TAG"
 
       - name: Publish GitHub release
@@ -100,6 +114,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "$RELEASE_TAG" tools/dist/*.zip tools/dist/*.zip.sha256 \
-            --title "ZygorPlus ${RELEASE_TAG#v}" \
-            --generate-notes
+          if [[ "$RELEASE_CHANNEL" == "alpha" ]]; then
+            gh release create "$RELEASE_TAG" tools/dist/*.zip tools/dist/*.zip.sha256 \
+              --title "ZygorPlus ${RELEASE_TAG#v} (Alpha)" \
+              --prerelease \
+              --notes $'## Alpha release\n\nThis early build is published for real-client testing and feedback. Some live-client acceptance scenarios remain pending; see `tools/release_acceptance.md` in the tagged source. Please report reproducible issues with your client build, enabled addons, guide, and diagnostic report.' \
+              --generate-notes
+          else
+            gh release create "$RELEASE_TAG" tools/dist/*.zip tools/dist/*.zip.sha256 \
+              --title "ZygorPlus ${RELEASE_TAG#v}" \
+              --generate-notes
+          fi

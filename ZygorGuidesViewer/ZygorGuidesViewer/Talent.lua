@@ -307,6 +307,17 @@ function Talent:GetPetBuilds()
   return self:GetBuilds("PET "..petType),petType
 end
 
+-- ADDON_LOADED and talent callbacks can fire while Database is still creating
+-- the selected profile. Build selection remains useful in memory at that
+-- point, but must not turn a transient startup order into a Lua error.
+local function selectedBuildStore()
+  local profile=ZGV and ZGV.db and ZGV.db.profile
+  local talent=profile and profile.talent
+  if type(talent)~="table" then return nil end
+  if type(talent.selected)~="table" then talent.selected={} end
+  return talent.selected
+end
+
 function Talent:SelectBuild(value)
   local _,class=UnitClass("player")
   for _,build in ipairs(self.builds) do
@@ -320,7 +331,8 @@ function Talent:SelectBuild(value)
       local context=(build.petType and "pet" or "player")..tostring(group)
       self.selectedByContext=self.selectedByContext or {}
       self.selectedByContext[context]=build
-      ZGV.db.profile.talent.selected[context]=build.id
+      local selectedStore=selectedBuildStore()
+      if selectedStore then selectedStore[context]=build.id end
       ZGV:Fire("ZGV_TALENT_BUILD_CHANGED",build)
       return true
     end
@@ -336,7 +348,8 @@ function Talent:GetSelected(isPet)
     local compiled=self:Compile(selected)
     if compiled and compiled.valid then return selected end
   end
-  local id=ZGV.db.profile.talent.selected[context]
+  local selectedStore=selectedBuildStore()
+  local id=selectedStore and selectedStore[context]
   if id then
     for _,build in ipairs(self.builds) do
       if build.id==id then
@@ -532,7 +545,9 @@ function Talent:InitializeBuilds(trigger)
     end
     self.validationLogged=true
   end
-  local legacy=ZGV.db.profile.talent.legacyBuild
+  local profile=ZGV and ZGV.db and ZGV.db.profile
+  local talentProfile=profile and profile.talent
+  local legacy=talentProfile and talentProfile.legacyBuild
   if legacy then self:SelectBuild(legacy) end
   if not self:GetSelected(false) then
     local builds=self:GetBuilds(class)

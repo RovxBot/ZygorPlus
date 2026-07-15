@@ -110,8 +110,8 @@ literal registration rather than weakening the release gate.
 
 ## Build a private release
 
-Review and update the version in `tools/release.json`, then inspect the exact file
-set before writing anything:
+Review and update the version and `release_channel` in `tools/release.json`,
+then inspect the exact file set before writing anything:
 
 ```bash
 python3 tools/package_release.py --dry-run
@@ -127,26 +127,34 @@ Output defaults to `tools/dist/ZygorGuidesViewer-WotLK-<version>.zip`. ZIP entry
 order and timestamps are fixed, so unchanged inputs produce an identical digest.
 The package contains only `addon_roots` from `release.json`; `@eaDir`, development
 folders, tests, source-art files, editor backups, logs, and Python files are
-excluded. Symlinks are rejected. Packaging is blocked when validation or the
-feature-parity gate has errors. `--skip-validation` exists only to inspect
-incomplete development bundles and must not be used for a release.
+excluded. Symlinks are rejected. Packaging is always blocked by strict addon
+validation and missing implementation/automated-parity evidence.
+
+`release_channel: "alpha"` produces an installable feedback build while
+live-client acceptance rows are still pending. `release_channel: "stable"`
+also requires every live acceptance row to pass. `--skip-validation` exists
+only to inspect incomplete development bundles and must not be used for a
+release.
 
 ## Create a GitHub release
 
 The **Create release** GitHub Actions workflow is the public release profile.
 It is intentionally manual. Before triggering it, commit and push the final
-sources with a semantic version (for example `0.1.13`) in `release.json`, then
-select that commit's branch in **Actions → Create release → Run workflow**. The
-workflow derives and checks availability of the matching `v0.1.13` tag, runs the complete
-automated suite and strict validation/parity gates, builds the deterministic ZIP
-and checksum, preserves them as workflow artifacts, creates and pushes an
-annotated release tag, then creates the GitHub Release with generated notes. It
-refuses an existing release or tag and never creates a tag until every gate has
-passed.
+sources with a semantic version (for example `0.1.13`) and release channel in
+`release.json`, then select that commit's branch in **Actions → Create release
+→ Run workflow**. The workflow derives and checks availability of the matching
+`v0.1.13` tag, runs the complete automated suite and strict addon validation,
+builds the deterministic ZIP and checksum, preserves them as workflow
+artifacts, creates and pushes an annotated release tag, then creates the GitHub
+Release with generated notes. It refuses an existing release or tag and never
+creates a tag until the selected channel's gates have passed.
 
 The workflow requires the repository's Actions `GITHUB_TOKEN` to have
-**Contents: write** permission. It never publishes if the strict parity registry
-still has a pending live-client scenario.
+**Contents: write** permission. An `alpha` channel creates a GitHub **pre-release**
+with an explicit feedback notice and allows only pending live-client scenarios;
+missing implementation or automated evidence still blocks it. A `stable`
+channel never publishes while the parity registry has a pending live-client
+scenario.
 
 ## Feature-parity release gate
 
@@ -159,13 +167,14 @@ not proof that an interaction works on a 3.3.5a client.
 # Development: check the registry and automated evidence.
 python3 tools/check_release_parity.py --allow-live-pending
 
-# Release: also require every recorded live scenario to be marked passed.
+# Stable release: also require every recorded live scenario to be marked passed.
 python3 tools/check_release_parity.py
 ```
 
-The deterministic packager runs the strict form automatically. Update a row's
-`live_status` only after its stated fresh/migrated-profile scenario has actually
-passed, preventing an untested client interaction from shipping.
+The deterministic packager selects the appropriate form from
+`release_channel`. Update a row's `live_status` only after its stated
+fresh/migrated-profile scenario has actually passed; alpha publication does not
+turn pending evidence into a pass.
 
 The complete fresh/migrated profile matrix, expected probe captures, and visual
 baseline requirements are in [release_acceptance.md](release_acceptance.md).

@@ -1,10 +1,13 @@
 # Build-12340 release acceptance matrix
 
 This checklist is the live evidence required to change a row in
-`release_parity.json` from `live_status: "pending"` to `"passed"`. Record the
-client build, package SHA-256, profile type, and `/zgvprobe capture <name>`
-checkpoint beside each result. A failed check remains pending with a linked
-diagnostic correlation ID; do not mark it passed with a workaround.
+`release_parity.json` from `live_status: "pending"` to `"passed"` for a
+**stable** release. An alpha may be published as an explicitly labelled GitHub
+pre-release while rows remain pending, but it must not relabel or imply that
+the outstanding live scenarios have passed. Record the client build, package
+SHA-256, profile type, and `/zgvprobe capture <name>` checkpoint beside each
+result. A failed check remains pending with a linked diagnostic correlation ID;
+do not mark it passed with a workaround.
 
 | Scenario | Fresh profile | Migrated profile | Required evidence |
 | --- | --- | --- | --- |
@@ -26,3 +29,66 @@ Use named capture points such as `viewer-layout`, `questie-on`,
 `sync-mismatch`, and `logout-export`. Screenshots are a required companion to
 the passive probe for visual rows; the probe records geometry and API state but
 does not capture pixels.
+
+## Capture discipline
+
+`/zgvprobe capture <name>` records the state that already exists at that exact
+moment; it does **not** open a window, travel, change a Questie setting, advance
+a guide, or exercise a feature. Perform the stated interaction first, leave the
+relevant window or route visible where applicable, then capture it. A capture
+for `auction`, `trainer-dk`, or `sync-handshake` is not evidence for that row if
+the recorded Auction, Trainer, or peer state is absent.
+
+For the current profile, use this minimum order:
+
+1. Open the Viewer menu; use search, open a category, toggle a favourite, then
+   revisit it through history. Capture `viewer-menu` while the menu is open and
+   retain a screenshot.
+2. Accept or advance a real quest, kill/collect one objective, then turn it in.
+   Capture `quest-progress` while the objective counter is visible in the
+   viewer/widget/action bar.
+3. Enable Questie's auto-accept and auto-complete options, open a quest or
+   gossip dialog, and capture `questie-on`. Disable them again and capture
+   `questie-off`; repeat on a profile where Questie was loaded before ZGV.
+4. Open the Blizzard talent window and the Zygor advisor, inspect a build and
+   glyph recommendation, then capture `talent-<class>`. Open an actual class or
+   profession trainer before `trainer-<class>` / `trainer-profession`.
+5. Open the Auction House before `auction`, and capture `gear-gold` only after
+   exercising an upgrade/finder result plus the intended gold workflow.
+6. Open the taxi map, select or complete a multi-leg route, and retain the map,
+   minimap, and arrow screenshots before `navigation-taxi`. Use a separately
+   filtered POI before `navigation-poi`.
+7. For Sync v2, use two matching New installs and capture after the handshake,
+   reconnect/resync, and mismatch feedback—not merely while Sync is inactive.
+
+## Evidence log
+
+### 2026-07-15 — ChromieCraft 3.3.5a build 12340, existing profile
+
+**Status: partial evidence only; no release-parity row is passed by this
+entry.** The deployed addon package checksum was not captured, and this is not
+a clean-profile or two-client run.
+
+- Probe session 3 recorded seven checkpoints: `viewer-menu`,
+  `quest-progress`, `questie-on`, `talent-shaman`, `trainer-profession`,
+  `gear-gold`, and `navigation-taxi`.
+- The session recorded real client activity: two `QUEST_ACCEPTED`, two
+  `QUEST_COMPLETE`, six `QUEST_FINISHED`, 29 `QUEST_LOG_UPDATE`, three
+  `GOSSIP_SHOW`, 19 combat enter/leave pairs, six `SKILL_LINES_CHANGED`, and
+  one `TAXIMAP_OPENED` event.
+- At each named checkpoint ZGV was loaded on the Nagrand (64-65) guide at step
+  40, with a direct 112-yard route. Questie was loaded but both automation
+  options were false; Sync v2 was inactive (`role=off`, `peers=0`).
+- No checkpoint was taken with the talent, trainer, auction, trade-skill,
+  quest, or gossip window visible. Consequently these checkpoints do not
+  validate those UI/workflow rows, and `questie-on` does not validate Questie
+  suppression.
+- ZGV diagnostic session `20260715-123915-10287379` contains 111 information
+  entries and **zero** errors or warnings. The probe's 105
+  `ADDON_ACTION_BLOCKED` events name `CompactRaidFrame` / `CompactPartyFrame`,
+  not a ZGV protected action.
+
+The older diagnostics history contains resolved pre-candidate ItemScore,
+talent-advisor, inventory, and guide-parser faults. It is retained for
+regression investigation but is not evidence of an error in the clean session
+above.

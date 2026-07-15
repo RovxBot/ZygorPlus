@@ -11,7 +11,7 @@ import sys
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
-from package_release import collect_files, load_manifest, write_zip  # noqa: E402
+from package_release import collect_files, load_manifest, requires_live_parity, write_zip  # noqa: E402
 from validate_addons import parse_texture, resolve_exact_case, validate  # noqa: E402
 from export_zgv_diagnostics import diagnostics_entries, read_saved_variables, render  # noqa: E402
 from check_release_parity import evaluate as evaluate_release_parity  # noqa: E402
@@ -111,8 +111,26 @@ class ValidatorTests(unittest.TestCase):
                 "exclude_globs": ["*/Dev/*"],
             }), encoding="utf-8")
             manifest = load_manifest(manifest_path)
+            self.assertEqual(manifest["release_channel"], "stable")
             selected = [name for _, name in collect_files(root, manifest)]
             self.assertEqual(selected, ["Example/Example.toc", "Example/Main.lua"])
+
+    def test_release_channel_controls_live_parity_requirement(self) -> None:
+        self.assertTrue(requires_live_parity({"release_channel": "stable"}))
+        self.assertFalse(requires_live_parity({"release_channel": "alpha"}))
+
+    def test_invalid_release_channel_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest_path = Path(temporary) / "release.json"
+            manifest_path.write_text(json.dumps({
+                "schema": 1,
+                "name": "Example",
+                "version": "1.0.0",
+                "release_channel": "preview",
+                "addon_roots": ["Example"],
+            }), encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "release_channel"):
+                load_manifest(manifest_path)
 
     def test_validation_uses_release_exclusions(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

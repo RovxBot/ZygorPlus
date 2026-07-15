@@ -2,6 +2,7 @@
   "schema": 1,
   "name": "ZygorGuidesViewer-WotLK",
   "version": "0.1.13",
+  "release_channel": "alpha",
   "bundle_root": "ZygorGuidesViewer",
   "addon_roots": [
     "ZygorGuidesViewer",

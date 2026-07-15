@@ -1,0 +1,110 @@
+name: Bug report
+description: Report a reproducible problem in the ZygorPlus WotLK alpha.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing the alpha. One issue per report makes problems much
+        easier to reproduce and fix. Please redact account names, server addresses, 
+        and any other private information before attaching logs
+        or screenshots.
+
+  - type: dropdown
+    id: release
+    attributes:
+      label: ZygorPlus release
+      description: Select the installed release. Include the ZIP SHA-256 below if you have it.
+      options:
+        - v0.1.13 alpha
+        - Other / self-built version
+    validations:
+      required: true
+
+  - type: input
+    id: package_checksum
+    attributes:
+      label: Package checksum or commit (if known)
+      description: Paste the ZIP SHA-256 or Git commit. Leave blank if unavailable.
+      placeholder: e.g. 0123abcd... or 1a2b3c4
+
+  - type: input
+    id: client
+    attributes:
+      label: Client and server
+      description: Include the WoW build, server/realm, and client locale.
+      placeholder: ChromieCraft / 3.3.5a build 12340 / enUS
+    validations:
+      required: true
+
+  - type: textarea
+    id: character_context
+    attributes:
+      label: Character and guide context
+      description: Include faction, class, level, zone, active guide, and guide step. Use a character name if relevant.
+      placeholder: Horde Shaman, level 64, Nagrand; Nagrand (64-65), step 40
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact actions from logging in or loading the guide to seeing the problem.
+      placeholder: |
+        1. Load ...
+        2. Open ...
+        3. Click ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: Describe what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Describe what happened instead, including any visible error text.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Reproducibility
+      options:
+        - Every time
+        - Often
+        - Once so far
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: addons
+    attributes:
+      label: Other enabled addons
+      description: List every other enabled addon and its version, especially Questie, TomTom, UI replacements, and error-capture addons. Write `None` if applicable.
+      placeholder: Questie-335 v..., TomTom v..., Details! v...
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, or additional logs
+      description: Drag in screenshots, or attach a redacted error log. For visual, navigation, and UI issues, a screenshot is especially helpful.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and have provided redacted, reproducible information.
+          required: true

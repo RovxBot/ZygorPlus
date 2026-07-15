@@ -74,6 +74,19 @@ assert(#unknown.unsupported==1 and unknown.unsupported[1]=="unsupportedfixture",
 -- retry branch therefore only retries when the quest is active, and sends a
 -- non-active quest to the turn-in continuation.
 local hordeSource=assert(io.open(repo.."/ZygorGuidesViewer/ZygorGuidesViewer_GuidesHorde/Leveling/ZygorLevelingHordeCLASSIC.lua","r")):read("*a")
+-- Parse the complete guide that previously produced an unsupported-tag report
+-- in the client. A two-line prose fixture cannot cover every authored pipe
+-- modifier and natural-language instruction in the shipping data.
+local nagrandMarker='ZygorGuidesViewer:RegisterGuide("Leveling Guides\\\\The Burning Crusade (60-70)\\\\Nagrand (64-65)",{'
+local nagrandStart=assert(hordeSource:find(nagrandMarker,1,true),"Horde Nagrand guide registration")
+local nagrandRawStart=assert(hordeSource:find("},[[",nagrandStart,true),"Horde Nagrand guide body start")
+local nagrandRawEnd=assert(hordeSource:find("]])",nagrandRawStart,true),"Horde Nagrand guide body end")
+local fullNagrand=assert(Parser:ParseEntry({
+  id="horde-nagrand-release",title="Horde Nagrand release guide",header={},
+  raw=hordeSource:sub(nagrandRawStart+4,nagrandRawEnd-1),
+}))
+assert(#fullNagrand.parseIssues==0,"complete Horde Nagrand guide has no unsupported-tag diagnostics")
+assert(#fullNagrand.steps>100,"complete Horde Nagrand guide retains its release step graph")
 assert(hordeSource:find("havequest%(10041%) and not readyq%(10041%)"),"Horde Terokkar retry requires an active quest")
 assert(hordeSource:find("readyq%(10041%) or not havequest%(10041%)"),"Horde Terokkar non-active quest reaches hand-in")
 local allianceSource=assert(io.open(repo.."/ZygorGuidesViewer/ZygorGuidesViewer_GuidesAlliance/Leveling/ZygorLevelingAllianceCLASSIC.lua","r")):read("*a")
