@@ -1,0 +1,6 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="ZygorGuidesViewerMenuFrame.lua"/>
+  <!-- Compatibility template only.  ModernViewer owns the visible Classic
+       Starlight shell and avoids the 2008 frame/artwork in the source XML. -->
+  <Frame name="ZygorGuidesViewerMenuFrameTemplate" virtual="true" hidden="true"/>
+</Ui>

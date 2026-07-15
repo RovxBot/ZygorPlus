@@ -1,0 +1,5 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="Libs\LibStub\LibStub.lua"/>
+  <Include file="Libs\Astrolabe\Load.xml"/>
+  <Include file="Libs\LibGratuity-3.0\lib.xml"/>
+</Ui>

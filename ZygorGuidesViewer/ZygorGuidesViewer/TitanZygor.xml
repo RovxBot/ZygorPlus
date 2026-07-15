@@ -1,0 +1,16 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <!-- Optional Titan include: do not load from the base TOC because Titan's
+       template is unavailable when the panel addon is disabled. -->
+  <Script file="TitanZygor.lua"/>
+  <Frame parent="UIParent">
+    <Frames>
+      <Button name="TitanPanelZygorButton" inherits="TitanPanelComboTemplate" frameStrata="FULLSCREEN" toplevel="true">
+        <Scripts>
+          <OnLoad>if TITAN_VERSION then TitanPanelZygorButton_OnLoad(self) TitanPanelButton_OnLoad(self) end</OnLoad>
+          <OnEvent>if TITAN_VERSION then TitanPanelZygorButton_OnEvent(self,event,...) end</OnEvent>
+          <OnClick>if TITAN_VERSION then TitanPanelZygorButton_OnClick(self,button) TitanPanelButton_OnClick(self,button) end</OnClick>
+        </Scripts>
+      </Button>
+    </Frames>
+  </Frame>
+</Ui>

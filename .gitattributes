@@ -1,0 +1,17 @@
+# Keep source and metadata stable across platforms.
+* text=auto eol=lf
+*.lua text eol=lf diff=lua
+*.xml text eol=lf
+*.toc text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.py text eol=lf
+*.sh text eol=lf
+
+# WoW artwork and release archives are binary.
+*.blp binary
+*.tga binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.zip binary

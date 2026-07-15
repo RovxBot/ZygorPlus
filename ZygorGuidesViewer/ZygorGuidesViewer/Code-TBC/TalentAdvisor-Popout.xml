@@ -1,0 +1,10 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+  <!--
+    Build 12340 has no retail mixin/parentKey XML contract. The Classic-looking
+    frame is constructed in ModernTalentAdvisor.lua; this XML keeps the source
+    load boundary and loads its legacy global-method facade safely on 3.3.5a.
+  -->
+  <Script file="TalentAdvisor-Popout.lua"/>
+</Ui>

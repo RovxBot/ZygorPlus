@@ -1,0 +1,18 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<!--
+		Loaded after the WotLK root implementations.  These files only expose
+		the Anniversary Code-TBC public facade; they never register a second
+		copy of a root module.
+	-->
+	<Script file="QuestTracking.lua"/>
+	<Script file="Faction.lua"/>
+	<Script file="Profession.lua"/>
+	<Script file="QuestAutoAccept.lua"/>
+	<Script file="QuestDB.lua"/>
+	<Script file="Goal.lua"/>
+	<Script file="PointerMap.lua"/>
+	<Script file="Item-DataTables.lua"/>
+	<Script file="Item-ItemScore.lua"/>
+	<Script file="Item-GearFinder.lua"/>
+	<Script file="InitialFlightPaths.lua"/>
+</Ui>

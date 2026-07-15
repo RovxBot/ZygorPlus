@@ -1,0 +1,34 @@
+# Deterministic package output. Rebuild with tools/package_release.py.
+/tools/dist/
+/Zgor 3.3.5a/
+/ZygorGuidesViewerClassicTBCAnniv/
+
+# Python bytecode and test caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local editor and operating-system state.
+.DS_Store
+Thumbs.db
+@eaDir/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local diagnostics and temporary files.
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# Never commit a copied WoW client profile or its logs.
+/WTF/
+/Logs/
+
+# Local task scratchpad; project documentation belongs in README.md or docs/.
+/task.md

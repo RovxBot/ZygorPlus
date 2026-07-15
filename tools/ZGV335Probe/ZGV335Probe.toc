@@ -1,0 +1,11 @@
+## Interface: 30300
+## Title: ZGV 3.3.5a Capability Probe
+## Notes: Development-only, passive API/event/widget/texture capability recorder.
+## Author: ZygorPlus development
+## Version: 1.0.0
+## DefaultState: disabled
+## LoadOnDemand: 0
+## SavedVariables: ZGV335ProbeDB
+## X-Development-Only: true
+
+Probe.lua

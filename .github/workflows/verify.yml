@@ -1,0 +1,43 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes lua5.1
+          sudo ln -sf "$(command -v lua5.1)" /usr/local/bin/lua
+
+      - name: Run Lua contract tests
+        run: |
+          set -euo pipefail
+          for test in tools/tests/lua/*.lua; do
+            lua5.1 "$test" "$GITHUB_WORKSPACE"
+          done
+
+      - name: Run Python tests and release gates
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tools/tests -v
+          python3 tools/validate_addons.py --strict
+          python3 tools/audit_port.py --fail-on-pending
+          python3 tools/check_release_parity.py --allow-live-pending

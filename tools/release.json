@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "name": "ZygorGuidesViewer-WotLK",
+  "version": "0.1.12-dev",
+  "bundle_root": "ZygorGuidesViewerNew",
+  "addon_roots": [
+    "ZygorGuidesViewer",
+    "ZygorGuidesViewer_GuidesCommon",
+    "ZygorGuidesViewer_GuidesAlliance",
+    "ZygorGuidesViewer_GuidesHorde",
+    "ZygorTalentAdvisor"
+  ],
+  "catalog_runtime_groups": [
+    [
+      "ZygorGuidesViewer",
+      "ZygorGuidesViewer_GuidesCommon",
+      "ZygorGuidesViewer_GuidesAlliance",
+      "ZygorTalentAdvisor"
+    ],
+    [
+      "ZygorGuidesViewer",
+      "ZygorGuidesViewer_GuidesCommon",
+      "ZygorGuidesViewer_GuidesHorde",
+      "ZygorTalentAdvisor"
+    ]
+  ],
+  "guide_registration_filters": [
+    {
+      "glob": "ZygorGuidesViewer_GuidesAlliance/Legacy-Wrath/ZygorLevelingAllianceWOTLK.lua",
+      "title_prefix": "Zygor's Alliance Leveling Guides\\Northrend (",
+      "expected": 5
+    },
+    {
+      "glob": "ZygorGuidesViewer_GuidesHorde/Legacy-Wrath/ZygorLevelingHordeWOTLK.lua",
+      "title_prefix": "Zygor's Horde Leveling Guides\\Northrend (",
+      "expected": 5
+    },
+    {
+      "glob": "ZygorGuidesViewer_GuidesAlliance/Legacy-Wrath/ZygorDailiesAllianceWOTLK.lua",
+      "title_prefix": "Zygor's Alliance Dailies Guides\\",
+      "allowed_first_segments": [
+        "Borean Tundra",
+        "Dalaran",
+        "Dragonblight",
+        "Grizzly Hills",
+        "Howling Fjord",
+        "Icecrown",
+        "Sholazar Basin",
+        "The Storm Peaks",
+        "Zul'Drak",
+        "Speed Gold Runs",
+        "Reputation"
+      ],
+      "expected": 69
+    },
+    {
+      "glob": "ZygorGuidesViewer_GuidesHorde/Legacy-Wrath/ZygorDailiesHordeWOTLK.lua",
+      "title_prefix": "Zygor's Horde Dailies Guides\\",
+      "allowed_first_segments": [
+        "Borean Tundra",
+        "Dalaran",
+        "Dragonblight",
+        "Grizzly Hills",
+        "Howling Fjord",
+        "Icecrown",
+        "Sholazar Basin",
+        "The Storm Peaks",
+        "Zul'Drak",
+        "Speed Gold Runs",
+        "Reputation"
+      ],
+      "expected": 63
+    }
+  ],
+  "exclude_globs": [
+    "*/@eaDir/*",
+    "@eaDir/*",
+    "*.bak",
+    "*.orig",
+    "*.rej",
+    "*.tmp",
+    "*.swp",
+    "*.py",
+    "*.pyc",
+    "*.pyo",
+    "*.log",
+    "*.psd",
+    "*.xcf",
+    "*Trial.lua",
+    "*TRIAL.lua",
+    "*/.DS_Store",
+    "*/Thumbs.db",
+    "*/Tests/*",
+    "*/tests/*",
+    "*/Dev/*",
+    "*/dev/*",
+    "*/Probes/*",
+    "*/probes/*",
+    "ZygorGuidesViewer/Localization/*",
+    "ZygorGuidesViewer/Arrows/Arrows.xml",
+    "ZygorGuidesViewer/Arrows/ArrowSkin.xml",
+    "ZygorGuidesViewer/Arrows/Arrows.lua",
+    "ZygorGuidesViewer/Arrows/ArrowSkin.lua",
+    "ZygorGuidesViewer/Arrows/*/Arrow.lua",
+    "ZygorGuidesViewer/Skins/Skins.xml",
+    "ZygorGuidesViewer/Skins/Default/Skin.xml",
+    "ZygorGuidesViewer/Skins/Default/Skin.lua",
+    "ZygorGuidesViewer/Skins/Default/ViewerFrame.xml",
+    "ZygorGuidesViewer/Skins/Default/ViewerFrame.lua"
+  ]
+}

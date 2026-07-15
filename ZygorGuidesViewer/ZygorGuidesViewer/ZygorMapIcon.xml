@@ -1,0 +1,6 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="ZygorMapIcon.lua"/>
+  <!-- The live button is created by ModernViewer.  This template retains the
+       Classic XML entry point without creating a competing Minimap child. -->
+  <Frame name="ZygorGuidesViewerMapIconTemplate" virtual="true" hidden="true"/>
+</Ui>

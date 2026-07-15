@@ -1,0 +1,20 @@
+## Interface: 30300
+## Title: Zygor Guides Viewer - Common Guides (WotLK)
+## Notes: Shared full Zygor Classic/TBC guide content for the 3.3.5a viewer port.
+## Author: Zygor Guides / ZygorPlus port
+## Version: 0.1.0
+## X-License: GPL
+## X-Website: http://zygorguides.com/
+## X-eMail: zygor@zygorguides.com
+## RequiredDeps: ZygorGuidesViewer
+## LoadOnDemand: 1
+## DefaultState: enabled
+## X-Zygor-Content-Schema: 1
+## X-Zygor-Content-Kind: common
+## X-Zygor-Content-Priority: 200
+## X-Zygor-Source: ZygorGuidesViewerClassicTBCAnniv-8.1
+## X-Zygor-Trial-Content: 0
+
+Manifest.lua
+Guides.xml
+Finish.lua

@@ -1,0 +1,892 @@
+{
+  "schema": 1,
+  "source_root": "ZygorGuidesViewerClassicTBCAnniv",
+  "bundle_root": "ZygorGuidesViewerNew",
+  "expected_source_files": 864,
+  "target_roots": [
+    "ZygorGuidesViewer",
+    "ZygorGuidesViewer_GuidesCommon",
+    "ZygorGuidesViewer_GuidesAlliance",
+    "ZygorGuidesViewer_GuidesHorde",
+    "ZygorTalentAdvisor"
+  ],
+  "rules": [
+    {
+      "id": "adapt-root-guide-runtime-contracts",
+      "disposition": "adapted",
+      "reason": "The Anniversary guide model, parser, condition, catalogue, option, module, and viewer-facade contracts are retained as build-12340 Lua 5.1 modules. Retail-only branches are removed; the executable load-closure tests exercise the public selection/progress facades rather than treating same-name file presence as proof.",
+      "source_paths": [
+        "ChainsParser.lua",
+        "Class.lua",
+        "Config.lua",
+        "Faction.lua",
+        "Flavour.lua",
+        "Functions.lua",
+        "Goal.lua",
+        "Guide.lua",
+        "GuideSorting.lua",
+        "Modules.lua",
+        "Options.lua",
+        "Parser.lua",
+        "QuestDB.lua",
+        "Retrofit.lua",
+        "Step.lua",
+        "Ver.lua",
+        "ZygorGuidesViewer.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/ChainsParser.lua",
+        "ZygorGuidesViewer/Class.lua",
+        "ZygorGuidesViewer/Config.lua",
+        "ZygorGuidesViewer/Faction.lua",
+        "ZygorGuidesViewer/Flavour.lua",
+        "ZygorGuidesViewer/Functions.lua",
+        "ZygorGuidesViewer/Goal.lua",
+        "ZygorGuidesViewer/Guide.lua",
+        "ZygorGuidesViewer/GuideSorting.lua",
+        "ZygorGuidesViewer/Modules.lua",
+        "ZygorGuidesViewer/Options.lua",
+        "ZygorGuidesViewer/Parser.lua",
+        "ZygorGuidesViewer/QuestDB.lua",
+        "ZygorGuidesViewer/Retrofit.lua",
+        "ZygorGuidesViewer/Step.lua",
+        "ZygorGuidesViewer/Ver.lua",
+        "ZygorGuidesViewer/ZygorGuidesViewer.lua",
+        "ZygorGuidesViewer/Catalog.lua",
+        "ZygorGuidesViewer/Conditions.lua",
+        "ZygorGuidesViewer/Runtime.lua",
+        "ZygorGuidesViewer/ModernModel.lua"
+      ]
+    },
+    {
+      "id": "adapt-root-wotlk-client-services",
+      "disposition": "adapted",
+      "reason": "These source services retain their relevant inventory, item, dungeon, quest, creature, skill, group-sync, tooltip, waypoint, and local telemetry roles through WotLK-native APIs. Objective counters are read from GetQuestLogLeaderBoard, Questie keeps ownership of the shared watch list by default, sync uses legacy addon messages, and telemetry remains local SavedVariables data.",
+      "source_paths": [
+        "Announcements.lua",
+        "CreatureDetector.lua",
+        "CreatureViewer.lua",
+        "Dungeons.lua",
+        "Foglight.lua",
+        "Inventory.lua",
+        "Item-GearFinder.lua",
+        "Item-ItemScore.lua",
+        "Item-Quest.lua",
+        "Item-Upgrades.lua",
+        "QuestAutoAccept.lua",
+        "QuestTracking.lua",
+        "Skills.lua",
+        "Sync.lua",
+        "Telemetry.lua",
+        "TestFramework.lua",
+        "Tooltips.lua",
+        "Waypoints.lua",
+        "WhoWhere.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Announcements.lua",
+        "ZygorGuidesViewer/CreatureDetector.lua",
+        "ZygorGuidesViewer/CreatureViewer.lua",
+        "ZygorGuidesViewer/Dungeons.lua",
+        "ZygorGuidesViewer/Foglight.lua",
+        "ZygorGuidesViewer/Inventory.lua",
+        "ZygorGuidesViewer/Item-GearFinder.lua",
+        "ZygorGuidesViewer/Item-ItemScore.lua",
+        "ZygorGuidesViewer/Item-Quest.lua",
+        "ZygorGuidesViewer/Item-Upgrades.lua",
+        "ZygorGuidesViewer/QuestAutoAccept.lua",
+        "ZygorGuidesViewer/QuestTracking.lua",
+        "ZygorGuidesViewer/Skills.lua",
+        "ZygorGuidesViewer/Sync.lua",
+        "ZygorGuidesViewer/Telemetry.lua",
+        "ZygorGuidesViewer/TestFramework.lua",
+        "ZygorGuidesViewer/Tooltips.lua",
+        "ZygorGuidesViewer/Waypoints.lua",
+        "ZygorGuidesViewer/WhoWhere.lua",
+        "ZygorGuidesViewer/Automation.lua",
+        "ZygorGuidesViewer/Compat/Quest.lua",
+        "ZygorGuidesViewer/Compat/Item.lua"
+      ]
+    },
+    {
+      "id": "replace-root-navigation-layer",
+      "disposition": "replaced",
+      "reason": "Retail map-canvas pointers are replaced by a legacy-map/Astrolabe route engine with public Pointer/Waypoint/POI facades, authored WotLK route nodes, map and minimap route dots, multi-leg text instructions, a quadrant-safe Lua 5.1 atan2 fallback, and the Starlight sprite arrow renderer.",
+      "source_paths": [
+        "MapCoords.lua",
+        "Poi.lua",
+        "Pointer.lua",
+        "PointerMarkerTemplates.xml"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/MapCoords.lua",
+        "ZygorGuidesViewer/Poi.lua",
+        "ZygorGuidesViewer/Pointer.lua",
+        "ZygorGuidesViewer/PointerMarkerTemplates.xml",
+        "ZygorGuidesViewer/Navigation.lua",
+        "ZygorGuidesViewer/ModernArrow.lua",
+        "ZygorGuidesViewer/Compat/Map.lua",
+        "ZygorGuidesViewer/Data-WotLK/Routes.lua"
+      ]
+    },
+    {
+      "id": "replace-root-modern-viewer-shell",
+      "disposition": "replaced",
+      "reason": "The post-Wrath XML/AceGUI viewer shell is replaced by the loaded Lua Starlight viewer, clean guide menu, skinned popups, tabs, maintenance panel, minimap button, bindings, and compact build-12340 XML compatibility templates. Static tests prove the replacement files are in the real TOC/XML closure; in-client pixel and interaction parity is not claimed without a client run.",
+      "source_paths": [
+        "Bindings.xml",
+        "GuideMenu-View.lua",
+        "GuideMenu.lua",
+        "MagicKey.lua",
+        "MaintenanceFrame.xml",
+        "MasterFrame.lua",
+        "MasterFrame.xml",
+        "Skins.lua",
+        "StaticPopups.lua",
+        "Tabs.lua",
+        "Templates.xml",
+        "Tutorial.lua",
+        "ZygorGuidesViewerMenuFrame.lua",
+        "ZygorGuidesViewerMenuFrame.xml",
+        "ZygorMapIcon.lua",
+        "ZygorMapIcon.xml"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Bindings.xml",
+        "ZygorGuidesViewer/GuideMenu-View.lua",
+        "ZygorGuidesViewer/GuideMenu.lua",
+        "ZygorGuidesViewer/MagicKey.lua",
+        "ZygorGuidesViewer/Maintenance.lua",
+        "ZygorGuidesViewer/MaintenanceFrame.xml",
+        "ZygorGuidesViewer/MasterFrame.lua",
+        "ZygorGuidesViewer/MasterFrame.xml",
+        "ZygorGuidesViewer/Skins.lua",
+        "ZygorGuidesViewer/StaticPopups.lua",
+        "ZygorGuidesViewer/Tabs.lua",
+        "ZygorGuidesViewer/Templates.xml",
+        "ZygorGuidesViewer/Tutorial.lua",
+        "ZygorGuidesViewer/ZygorGuidesViewerMenuFrame.lua",
+        "ZygorGuidesViewer/ZygorGuidesViewerMenuFrame.xml",
+        "ZygorGuidesViewer/ZygorMapIcon.lua",
+        "ZygorGuidesViewer/ZygorMapIcon.xml",
+        "ZygorGuidesViewer/UI.lua",
+        "ZygorGuidesViewer/ModernViewer.lua",
+        "ZygorGuidesViewer/ModernGuideMenu.lua"
+      ]
+    },
+    {
+      "id": "replace-root-secure-action-layer",
+      "disposition": "replaced",
+      "reason": "The retail action-bar and permanent macro-preview machinery are replaced by contextual SecureActionButtonTemplate controls. WotLK pet slots use type=pet/action=slot, Blizzard's protected OnClick remains intact via PostClick bookkeeping, protected layout changes coalesce until combat ends, and a secure visibility state driver implements hide-in-combat. Loaded source-name facades preserve the ActionBar and MacroGuide public entry points without creating a second secure-button engine or managing permanent player macros.",
+      "source_paths": [
+        "ActionBar.lua",
+        "MacroGuide.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/ModernActionBar.lua",
+        "ZygorGuidesViewer/Automation.lua",
+        "ZygorGuidesViewer/Compat/UI.lua",
+        "ZygorGuidesViewer/ActionBar.lua",
+        "ZygorGuidesViewer/MacroGuide.lua",
+        "ZygorGuidesViewer/files-TBC.xml"
+      ]
+    },
+    {
+      "id": "replace-root-diagnostics-reporting",
+      "disposition": "replaced",
+      "reason": "The source upload/rating report UI, dormant ErrorLogger, and volatile Log ring are replaced by bounded session-tagged SavedVariables diagnostics, a temporary load-error capture that restores the previous handler, the in-viewer report, and the host exporter. Loaded BugReport, ErrorLogger, and callable Log facades retain source report/serialization/feedback methods while delegating storage to the bounded diagnostic ring. No network submission or game-folder file write is claimed because build 12340 addons cannot write arbitrary files.",
+      "source_paths": [
+        "BugReport.lua",
+        "ErrorLogger.lua",
+        "Log.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Core.lua",
+        "ZygorGuidesViewer/Database.lua",
+        "ZygorGuidesViewer/Maintenance.lua",
+        "ZygorGuidesViewer/ModernViewer.lua",
+        "ZygorGuidesViewer/Compat/LoadDiagnostics.lua",
+        "ZygorGuidesViewer/Compat/LoadDiagnosticsEnd.lua",
+        "ZygorGuidesViewer/BugReport.lua",
+        "ZygorGuidesViewer/ErrorLogger.lua",
+        "ZygorGuidesViewer/Log.lua",
+        "ZygorGuidesViewer/files-TBC.xml"
+      ]
+    },
+    {
+      "id": "replace-root-localization-cache",
+      "disposition": "replaced",
+      "reason": "The retail unit-token and quest-tooltip localization cache is replaced by the loaded locale table, hidden WotLK tooltip scanner, quest-log cache, authored NPC location corpus, installed-guide names, and live build-12340 units. A loaded Localizers.lua source-name facade preserves GetTranslatedNPC, FindNPCIdByName, and quest-data entry points without fabricating retail Creature GUID tooltips.",
+      "source_paths": [
+        "Localizers.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Locale.lua",
+        "ZygorGuidesViewer/Compat/Tooltip.lua",
+        "ZygorGuidesViewer/Compat/Quest.lua",
+        "ZygorGuidesViewer/QuestDB.lua",
+        "ZygorGuidesViewer/WhoWhere.lua",
+        "ZygorGuidesViewer/Data-WotLK/NPCData.lua",
+        "ZygorGuidesViewer/Localizers.lua",
+        "ZygorGuidesViewer/files-TBC.xml"
+      ]
+    },
+    {
+      "id": "replace-root-notification-center",
+      "disposition": "replaced",
+      "reason": "The AceGUI/hash-backed retail notification centre is replaced by a loaded Starlight toast queue with persistent history. The loaded source-name facade preserves the complete meaningful NotificationCenter method surface, including positioning, special-display, queue, reset, and orientation triggers, while delegating all queue and persistence work to ModernNotifications.lua.",
+      "source_paths": [
+        "NotificationCenter.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/ModernNotifications.lua",
+        "ZygorGuidesViewer/Database.lua",
+        "ZygorGuidesViewer/StaticPopups.lua",
+        "ZygorGuidesViewer/NotificationCenter.lua",
+        "ZygorGuidesViewer/files-TBC.xml"
+      ]
+    },
+    {
+      "id": "adapt-root-titan-panel-bridge",
+      "disposition": "adapted",
+      "reason": "The Titan Panel bridge retains its legacy registry, guide/step text, tooltip, click, and update callbacks, but creates the optional Titan template only when Titan is actually present so the base addon remains independently loadable.",
+      "source_paths": [
+        "TitanZygor.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/TitanZygor.lua"
+      ]
+    },
+    {
+      "id": "exclude-root-eager-titan-xml",
+      "disposition": "intentional_exclusion",
+      "reason": "The source TitanZygor.xml eagerly inherits TitanPanelComboTemplate and cannot load safely when Titan Panel is absent. The optional Lua bridge creates that template only after detecting Titan; the dormant target XML is deliberately outside the base TOC and no always-loaded XML replacement is claimed.",
+      "source_paths": [
+        "TitanZygor.xml"
+      ]
+    },
+    {
+      "id": "replace-tbc-quest-client-layer",
+      "disposition": "replaced",
+      "reason": "The TBC-specific faction tuple handling, goal helpers, gossip quest selection, guide quest cache, and quest-log tracker are replaced by build-12340 services. Loaded Code-TBC shims preserve the Anniversary paths and legacy callable facade without registering duplicate modules or quest-log event handlers. The services use GetFactionInfo/GetQuestLogTitle/GetQuestLogLeaderBoard and the legacy gossip APIs, build the quest index from every actually registered guide, expose the older quests/questsbyid facade, and leave the shared Blizzard watch list to Questie when present.",
+      "source_paths": [
+        "Code-TBC/Faction.lua",
+        "Code-TBC/Goal.lua",
+        "Code-TBC/QuestAutoAccept.lua",
+        "Code-TBC/QuestDB.lua",
+        "Code-TBC/QuestTracking.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Faction.lua",
+        "ZygorGuidesViewer/Goal.lua",
+        "ZygorGuidesViewer/Runtime.lua",
+        "ZygorGuidesViewer/QuestAutoAccept.lua",
+        "ZygorGuidesViewer/QuestDB.lua",
+        "ZygorGuidesViewer/QuestTracking.lua",
+        "ZygorGuidesViewer/Compat/Quest.lua",
+        "ZygorGuidesViewer/Compat/Gossip.lua",
+        "ZygorGuidesViewer/Code-TBC/Faction.lua",
+        "ZygorGuidesViewer/Code-TBC/Goal.lua",
+        "ZygorGuidesViewer/Code-TBC/QuestAutoAccept.lua",
+        "ZygorGuidesViewer/Code-TBC/QuestDB.lua",
+        "ZygorGuidesViewer/Code-TBC/QuestTracking.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-item-advisor-layer",
+      "disposition": "replaced",
+      "reason": "The source's TBC item keyword tables, slot/proficiency checks, and small Gear Finder tab are replaced by one WotLK evaluator. Loaded same-path Code-TBC shims retain the public metadata, slot/build helper names, and Gear Finder entry points while delegating every score, cache, and render operation to that evaluator. It supplies build-12340 tooltip/stat extraction (including weapon DPS), class/spec armor and weapon rules including Death Knights and learned Titan's Grip, weaker-slot comparisons, and level/expansion-filtered gear scans.",
+      "source_paths": [
+        "Code-TBC/Item-DataTables.lua",
+        "Code-TBC/Item-GearFinder.lua",
+        "Code-TBC/Item-ItemScore.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Item-ItemScore.lua",
+        "ZygorGuidesViewer/Item-GearFinder.lua",
+        "ZygorGuidesViewer/Item-Upgrades.lua",
+        "ZygorGuidesViewer/ModernGearAdvisor.lua",
+        "ZygorGuidesViewer/Compat/Item.lua",
+        "ZygorGuidesViewer/Compat/Tooltip.lua",
+        "ZygorGuidesViewer/Code-TBC/Item-DataTables.lua",
+        "ZygorGuidesViewer/Code-TBC/Item-GearFinder.lua",
+        "ZygorGuidesViewer/Code-TBC/Item-ItemScore.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-profession-runtime",
+      "disposition": "replaced",
+      "reason": "The profession runtime is replaced by the live build-12340 skill-line and TradeSkill APIs. A loaded same-path Code-TBC shim preserves the queued/craft cache hooks, recipe event callbacks, and GoalRecipe facade by forwarding them to that one service. The service covers all Wrath professions including Inscription, returns recipe spell/product IDs, output counts and reagent ownership, caches the open recipe book, performs only explicit craft requests, and retains GetSkill/GetRecipe/KnowsRecipe/CacheRecipes/PerformTradeSkill facades; trainer reminders come from the live trainer service list.",
+      "source_paths": [
+        "Code-TBC/Profession.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Compat/Profession.lua",
+        "ZygorGuidesViewer/Skills.lua",
+        "ZygorGuidesViewer/Conditions.lua",
+        "ZygorGuidesViewer/Code-TBC/Profession.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-pointer-and-initial-taxi-layer",
+      "disposition": "replaced",
+      "reason": "The hard-coded eight-race initial taxi flags and retail-era map-preview frame are replaced by authoritative TAXIMAP_OPENED node capture plus a pre-Cata instance preview. Loaded same-path Code-TBC shims connect the legacy initial-flight and PointerMap callable names to those services without seeding inaccurate race nodes or creating a second preview frame. The preview consumes the retained Classic/TBC BLP artwork, corrects Scarlet Monastery and Scholomance to build-12340 Map.dbc IDs, supports floor switching/faction artwork, and uses GetInstanceInfo instead of UiMapID/MapCanvas.",
+      "source_paths": [
+        "Code-TBC/InitialFlightPaths.lua",
+        "Code-TBC/PointerMap.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Compat/Taxi.lua",
+        "ZygorGuidesViewer/Navigation.lua",
+        "ZygorGuidesViewer/Pointer.lua",
+        "ZygorGuidesViewer/DungeonPreview.lua",
+        "ZygorGuidesViewer/Code-TBC/InitialFlightPaths.lua",
+        "ZygorGuidesViewer/Code-TBC/PointerMap.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-talent-advisor-runtime",
+      "disposition": "replaced",
+      "reason": "The retail-mixin portions of the TBC files are replaced by a loaded build-12340 implementation of the same visible contracts: a GearManager-border dockable popout and talent-frame tab, build dropdown, scrollable multi-point suggestions, colored recovery status, glyph summary, Hunter pet mode, preview, configuration, keybind, on-tree arrows/rank overlays and tooltips. Initialization explicitly loads Blizzard_TalentUI and retries after PLAYER_ALIVE/PLAYER_TALENT_UPDATE instead of permanently rejecting builds when PLAYER_LOGIN sees empty talent tables. Talent names resolve through the normalized WotLK Talent.dbc ID table, impossible 71-point/20-point-tree/rank/prerequisite sequences are rejected, and spending remains an explicit confirmed click.",
+      "source_paths": [
+        "Code-TBC/TalentAdvisor-Popout.lua",
+        "Code-TBC/TalentAdvisor-Popout.xml",
+        "Code-TBC/TalentAdvisor-Registering.lua",
+        "Code-TBC/TalentAdvisor.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Data-WotLK/TalentIDs.lua",
+        "ZygorGuidesViewer/Talent.lua",
+        "ZygorGuidesViewer/ModernTalentAdvisor.lua",
+        "ZygorGuidesViewer/Code-TBC/TalentAdvisor.lua",
+        "ZygorGuidesViewer/Code-TBC/TalentAdvisor-Registering.lua",
+        "ZygorGuidesViewer/Code-TBC/TalentAdvisor-Popout.lua",
+        "ZygorGuidesViewer/Code-TBC/TalentAdvisor-Popout.xml",
+        "ZygorTalentAdvisor/Builds/LegacyWotLKBuilds.lua"
+      ]
+    },
+    {
+      "id": "adapt-tbc-npc-location-data",
+      "disposition": "adapted",
+      "reason": "The full repair/vendor/inn/mailbox payload is retained with line-ending normalization and loaded before WhoWhere. A regression test compares the normalized source and target bytes so this large registry is not represented by a vague coverage claim.",
+      "source_paths": [
+        "Data-TBC/NPCData.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Data-WotLK/NPCData.lua",
+        "ZygorGuidesViewer/WhoWhere.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-progression-and-empty-phases",
+      "disposition": "replaced",
+      "reason": "The source XP table stops at level 70 and contains pre-Wrath 60-70 requirements. It is replaced by the build-12340 level 1-80 player_xp_for_level values while preserving ExpToLevel[targetLevel]; the source Phases.lua is empty, so the replacement deliberately exposes an empty Phases table rather than inventing retail C_Map phasing.",
+      "source_paths": [
+        "Data-TBC/Phases.lua",
+        "Data-TBC/XPTable.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Data-WotLK/Progression.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-dungeon-fog-and-menu-data",
+      "disposition": "replaced",
+      "reason": "Retail UiMap/file-ID dungeon and fog providers plus hard-coded TBC promotional menu pages are replaced by the live WotLK LFG registry, pre-Cata WorldMap overlay data, catalogue-derived modern menu, and build-12340 instance preview. This retains gameplay/UI behavior without loading MapCanvas-only datasets.",
+      "source_paths": [
+        "Data-TBC/Dungeons.lua",
+        "Data-TBC/Foglight.lua",
+        "Data-TBC/GuideMenu-Featured.lua",
+        "Data-TBC/GuideMenu-Home.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Dungeons.lua",
+        "ZygorGuidesViewer/Foglight.lua",
+        "ZygorGuidesViewer/ModernGuideMenu.lua",
+        "ZygorGuidesViewer/DungeonPreview.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-statweight-and-talent-data",
+      "disposition": "replaced",
+      "reason": "TBC statweights and talent name-number mappings are invalid for Wrath. They are replaced by class/spec WotLK item rules and the normalized build-12340 Talent.dbc registry, with tests for tree/rank/point validation and loaded executable contracts.",
+      "source_paths": [
+        "Data-TBC/Item-Statweights.lua",
+        "Data-TBC/TalentSpells.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Item-ItemScore.lua",
+        "ZygorGuidesViewer/Data-WotLK/TalentIDs.lua",
+        "ZygorGuidesViewer/Talent.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-quest-cache-and-route-caches",
+      "disposition": "replaced",
+      "reason": "The four faction-specific quest guide caches are rebuilt from the runtime catalogue, so adapted and Northrend guides cannot become stale. The two serialized Anniversary LibRover neighbourhood caches describe only the source graph and are replaced by the loaded authored route graph plus live taxi/map state.",
+      "source_paths": [
+        "Data-TBC/QuestDBData.lua",
+        "Data-TBC/LibRoverCache_ally.lua",
+        "Data-TBC/LibRoverCache_horde.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/QuestDB.lua",
+        "ZygorGuidesViewer/Data-WotLK/Routes.lua",
+        "ZygorGuidesViewer/Navigation.lua",
+        "ZygorGuidesViewer/Compat/Taxi.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-skill-training-data",
+      "disposition": "replaced",
+      "reason": "The static table contains only nine pre-Wrath classes and cannot represent Death Knight or later Wrath ranks. The loaded trainer module reads available services, rank, cost/requirements, and icon from the active build-12340 trainer; the profession service reads current skill lines and includes Inscription.",
+      "source_paths": [
+        "Data-TBC/Skill_Training.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Skills.lua",
+        "ZygorGuidesViewer/Compat/Profession.lua"
+      ]
+    },
+    {
+      "id": "exclude-post-wrath-model-databases",
+      "disposition": "intentional_exclusion",
+      "reason": "These generated databases are not TBC/Wrath data: they contain Cataclysm/Mists paths (expansion04/05, Pandaren, Mogu, Thunder Isle) and NPC/display IDs above the build-12340 DBC range. Loading them would feed nonexistent models to PlayerModel. The WotLK-native viewer instead uses authored creature/display IDs directly; loss is limited to automatic object-model paths and per-model camera tweaks when a guide has no authored display.",
+      "source_paths": [
+        "Data-TBC/DisplayModelsExtra.lua",
+        "Data-TBC/NPCModels.lua",
+        "Data-TBC/NPCModelsExtra.lua",
+        "Data-TBC/NPCModels_parse.lua",
+        "Data-TBC/ObjectModels.lua",
+        "Data-TBC/ObjectModelsExtra.lua"
+      ]
+    },
+    {
+      "id": "exclude-tbc-static-tradeskill-catalogues",
+      "disposition": "intentional_exclusion",
+      "reason": "The 55k-line recipe catalogue stops at TBC and the item-status table contains post-Wrath transmog, Monk, pet and retail auction classifications. Neither is a truthful WotLK dataset. The loaded TradeSkill service replaces character-known recipes, products, output counts, reagents, ownership and guarded crafting from the live client; a complete offline Wrath crafting-profit catalogue is not claimed.",
+      "source_paths": [
+        "Data-TBC/Tradeskill_Recipes.lua",
+        "Data-TBC/Tradeskill_Status.lua"
+      ]
+    },
+    {
+      "id": "exclude-empty-tbc-gold-data-include",
+      "disposition": "intentional_exclusion",
+      "reason": "Data-TBC/Gold/files.xml is an empty Ui element with no Script or Include entries; omitting it changes no executable or data contract.",
+      "source_paths": [
+        "Data-TBC/Gold/files.xml"
+      ]
+    },
+    {
+      "id": "replace-tbc-data-loader",
+      "disposition": "replaced",
+      "reason": "The source data.xml loader is replaced by explicit dependency-ordered Interface 30300 TOC entries. Validator and load-closure tests prove every named replacement is exact-case and executable while the separately documented incompatible datasets remain unloaded.",
+      "source_paths": [
+        "Data-TBC/data.xml"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/ZygorGuidesViewer.toc",
+        "ZygorGuidesViewer/Data-WotLK/Progression.lua",
+        "ZygorGuidesViewer/Data-WotLK/TalentIDs.lua",
+        "ZygorGuidesViewer/Data-WotLK/NPCData.lua",
+        "ZygorGuidesViewer/Dungeons.lua",
+        "ZygorGuidesViewer/Foglight.lua",
+        "ZygorGuidesViewer/Compat/Profession.lua"
+      ]
+    },
+    {
+      "id": "replace-wotlk-gold-opportunities-and-guides",
+      "disposition": "replaced",
+      "reason": "The product-specific profit-chore screens are replaced by the modern Opportunities surface: realm/faction trend-backed auction deals require a fresh named inspection before buying, known live WotLK profession recipes are priced through Compat.Profession and the appraiser, farming/gathering routes are discovered and explicitly loaded from Catalog, and the original tutorials are replaced by integrated status and safety help.",
+      "source_paths": [
+        "GoldUI/Goldguide-Auctions.lua",
+        "GoldUI/Goldguide-Core.lua",
+        "GoldUI/Goldguide-Crafting.lua",
+        "GoldUI/Goldguide-Farming.lua",
+        "GoldUI/Goldguide-Gathering.lua",
+        "GoldUI/Goldguide-Help.lua",
+        "GoldUI/Goldguide-Info.lua",
+        "GoldUI/Goldguide-View.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/GoldAppraiser.lua",
+        "ZygorGuidesViewer/ModernGoldTracker.lua",
+        "ZygorGuidesViewer/Catalog.lua",
+        "ZygorGuidesViewer/Compat/Profession.lua",
+        "ZygorGuidesViewer/Compat/Item.lua",
+        "ZygorGuidesViewer/Database.lua"
+      ]
+    },
+    {
+      "id": "replace-wotlk-auction-full-scan-and-support",
+      "disposition": "replaced",
+      "reason": "The legacy scan engine and static support tables are replaced by a manually initiated WotLK scan state machine using Compat.Auction CanQuery/getAll/page contracts with throttle retries, cancellation, duplicate-page detection, and time/page/row caps. Static stack sizes are replaced by live Compat.Item maxStack metadata; scan progress, usage help, and transaction safety are integrated into the modern Gold window.",
+      "source_paths": [
+        "Code-TBC/GoldUI/Auctiontools-Core.lua",
+        "Code-TBC/GoldUI/Auctiontools-Data.lua",
+        "Code-TBC/GoldUI/Auctiontools-Help.lua",
+        "Code-TBC/GoldUI/Scan.lua",
+        "Code-TBC/GoldUI/StackSizes.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/GoldAppraiser.lua",
+        "ZygorGuidesViewer/ModernGoldTracker.lua",
+        "ZygorGuidesViewer/Compat/Auction.lua",
+        "ZygorGuidesViewer/Compat/Item.lua",
+        "ZygorGuidesViewer/Database.lua"
+      ]
+    },
+    {
+      "id": "replace-ui-widget-factory",
+      "disposition": "replaced",
+      "reason": "The data-driven Anniversary ZGV.UI factory and its frame, input, selection, scrolling, progress, and secure action primitives are replaced by a compact build-12340 factory. Secure attributes are deferred out of combat and pet actions use WotLK's type=pet/action=slot contract. The live viewer continues to use its direct modern renderer while compatible content modules retain the public constructors.",
+      "source_paths": [
+        "UiWidgets/ActionButton.lua",
+        "UiWidgets/Button.lua",
+        "UiWidgets/DropDown.lua",
+        "UiWidgets/DropDownFork.lua",
+        "UiWidgets/EditBox.lua",
+        "UiWidgets/Frame.lua",
+        "UiWidgets/HyperEditBox.lua",
+        "UiWidgets/Main.lua",
+        "UiWidgets/Multiselect.lua",
+        "UiWidgets/ProgressBar.lua",
+        "UiWidgets/RadioButton.lua",
+        "UiWidgets/ScrollBar.lua",
+        "UiWidgets/ScrollChild.lua",
+        "UiWidgets/ScrollItems.lua",
+        "UiWidgets/ScrollTable.lua",
+        "UiWidgets/SuggestBox.lua",
+        "UiWidgets/ToggleButton.lua",
+        "UiWidgets/files.xml"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/UIWidgetsCompat.lua",
+        "ZygorGuidesViewer/Compat/UI.lua",
+        "ZygorGuidesViewer/UI.lua",
+        "ZygorGuidesViewer/ModernViewer.lua",
+        "ZygorGuidesViewer/ZygorGuidesViewer.toc"
+      ]
+    },
+    {
+      "id": "replace-ui-visual-renderer",
+      "disposition": "replaced",
+      "reason": "The source recursive Visuals content contract is replaced by a loaded build-12340 renderer preserving faction/class/beta conditions, the generic/title/banner/text/item/list/columns/content/guideslist/section/roadmap_section/separator vocabulary, nested layout, deterministic GetAsString serialization, callbacks, safe item hyperlinks, and guide selection by stable ID/title. Unknown element types fail closed. Retail product-editor chrome is not claimed because no target module consumes it.",
+      "source_paths": [
+        "UiWidgets/Visuals.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/VisualsCompat.lua",
+        "ZygorGuidesViewer/UIWidgetsCompat.lua",
+        "ZygorGuidesViewer/Compat/Item.lua",
+        "ZygorGuidesViewer/Catalog.lua",
+        "ZygorGuidesViewer/Runtime.lua",
+        "ZygorGuidesViewer/ZygorGuidesViewer.toc"
+      ]
+    },
+    {
+      "id": "replace-wotlk-dashboard-widgets",
+      "disposition": "replaced",
+      "reason": "The Anniversary widget grid, persistence, history, suggestions, money, bank, time-played, daily-reset, and calendar-facing behaviors are replaced by WotLK-native payloads. The dashboard is reachable from the modern viewer action menu and /zygor widgets; daily reset uses GetQuestResetTime, time played uses TIME_PLAYED_MSG, calendar access is guarded to the legacy Calendar API, and gold delegates to the click-only appraiser.",
+      "source_paths": [
+        "Widgets.lua",
+        "Widgets/bank.lua",
+        "Widgets/dailyreset.lua",
+        "Widgets/events.lua",
+        "Widgets/files.xml",
+        "Widgets/gold.lua",
+        "Widgets/guidehistory.lua",
+        "Widgets/guidesuggest.lua",
+        "Widgets/timeplayed.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Widgets.lua",
+        "ZygorGuidesViewer/DashboardWidgets.lua",
+        "ZygorGuidesViewer/Inventory.lua",
+        "ZygorGuidesViewer/ModernGoldTracker.lua",
+        "ZygorGuidesViewer/ModernViewer.lua",
+        "ZygorGuidesViewer/Core.lua",
+        "ZygorGuidesViewer/Database.lua",
+        "ZygorGuidesViewer/ZygorGuidesViewer.toc"
+      ]
+    },
+    {
+      "id": "exclude-post-wrath-dashboard-payloads",
+      "disposition": "intentional_exclusion",
+      "reason": "These payloads model post-Wrath systems or Zygor product messaging: covenant callings/assaults, Dragonflight hunts/races/feasts, Mythic+, renown, retail currencies/tokens/weekly vault objectives, retail notable/world-boss quest APIs, and promotional messages. The source weekly-reset payload specifically requires C_DateAndTime, for which build 12340 has no equivalent weekly-reset API; inventing a region-dependent timer would be misleading.",
+      "source_paths": [
+        "Widgets/callings.lua",
+        "Widgets/conquest.lua",
+        "Widgets/covenantassaults.lua",
+        "Widgets/dragonbane.lua",
+        "Widgets/dragonrace.lua",
+        "Widgets/feast.lua",
+        "Widgets/grandhunt.lua",
+        "Widgets/mythicplus.lua",
+        "Widgets/notablequests.lua",
+        "Widgets/renown.lua",
+        "Widgets/tokens.lua",
+        "Widgets/valor.lua",
+        "Widgets/weekly.lua",
+        "Widgets/weeklyreset.lua",
+        "Widgets/worldbosses.lua",
+        "Widgets/zygormessage.lua"
+      ]
+    },
+    {
+      "id": "replace-anniversary-library-distribution",
+      "disposition": "replaced",
+      "reason": "The Anniversary embedded-library distribution is replaced as a unit: build-12340 LibStub/LibGratuity and Astrolabe are the only loaded third-party contracts; Compat, Database, Options, Functions, Navigation, and the public LibRover/LibTaxi facades provide the event, timer, profile, menu, map, route, tooltip, and taxi behavior. The executable TOC/XML load-closure test proves that no loaded non-library module looks up the pruned AceConfig/AceGUI, HereBeDragons, Babble, Deflate, Graph, or Hash libraries.",
+      "source_globs": [
+        "Libs/**"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Libraries.xml",
+        "ZygorGuidesViewer/Compat/Compat.xml",
+        "ZygorGuidesViewer/Database.lua",
+        "ZygorGuidesViewer/Options.lua",
+        "ZygorGuidesViewer/Functions.lua",
+        "ZygorGuidesViewer/MapCoords.lua",
+        "ZygorGuidesViewer/Navigation.lua",
+        "ZygorGuidesViewer/Data-WotLK/Routes.lua"
+      ]
+    },
+    {
+      "id": "replace-tbc-rover-and-taxi-layer",
+      "disposition": "replaced",
+      "reason": "The TBC LibRover/LibTaxi loader and data shards are replaced by the 3.3.5-native map registry, authored route graph, live taxi capture/take adapter, loaded NPC/inn dataset, and LibRover/LibTaxi compatibility facades. The source floor-crossing and indoor-zone shards are explicitly empty; its valid build-12340 travel items are retained, while post-Wrath item 184871 is excluded. This is a WotLK client replacement rather than a byte-for-byte import of the Anniversary routing engine.",
+      "source_globs": [
+        "Libs-TBC/**"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Data-WotLK/MapRegistry.lua",
+        "ZygorGuidesViewer/Data-WotLK/Routes.lua",
+        "ZygorGuidesViewer/Data-WotLK/NPCData.lua",
+        "ZygorGuidesViewer/Compat/Map.lua",
+        "ZygorGuidesViewer/Compat/Taxi.lua",
+        "ZygorGuidesViewer/Navigation.lua",
+        "ZygorGuidesViewer/WhoWhere.lua"
+      ]
+    },
+    {
+      "id": "adapt-alliance-farming-guide",
+      "disposition": "adapted",
+      "reason": "The retained full guide payload removes duplicate farming registrations while preserving the remaining source content.",
+      "source_paths": [
+        "Guides-TBC/Gold/ZygorFarmingAllianceCLASSIC.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer_GuidesAlliance/Gold/ZygorFarmingAllianceCLASSIC.lua"
+      ]
+    },
+    {
+      "id": "adapt-alliance-leveling-guide",
+      "disposition": "adapted",
+      "reason": "The source guide is retained with 3.3.5a item-count calls and a link into the Alliance Northrend chain.",
+      "source_paths": [
+        "Guides-TBC/Leveling/ZygorLevelingAllianceCLASSIC.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer_GuidesAlliance/Leveling/ZygorLevelingAllianceCLASSIC.lua"
+      ]
+    },
+    {
+      "id": "adapt-horde-leveling-guide",
+      "disposition": "adapted",
+      "reason": "The source guide is retained with 3.3.5a item-count calls and a link into the Horde Northrend chain.",
+      "source_paths": [
+        "Guides-TBC/Leveling/ZygorLevelingHordeCLASSIC.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer_GuidesHorde/Leveling/ZygorLevelingHordeCLASSIC.lua"
+      ]
+    },
+    {
+      "id": "adapt-alliance-profession-guide",
+      "disposition": "adapted",
+      "reason": "The retained full profession payload removes registrations duplicated by the farming package.",
+      "source_paths": [
+        "Guides-TBC/Professions/ZygorProfessionsAllianceCLASSIC.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer_GuidesAlliance/Professions/ZygorProfessionsAllianceCLASSIC.lua"
+      ]
+    },
+    {
+      "id": "adapt-common-profession-guide",
+      "disposition": "adapted",
+      "reason": "The retained common profession payload removes duplicate guide registrations while preserving the selected routes.",
+      "source_paths": [
+        "Guides-TBC/Professions/ZygorProfessionsCommonCLASSIC.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer_GuidesCommon/Professions/ZygorProfessionsCommonCLASSIC.lua"
+      ]
+    },
+    {
+      "id": "replace-unloaded-anniversary-arrow-shell",
+      "disposition": "replaced",
+      "reason": "These byte-identical Anniversary arrow Lua/XML files remain only as reference material and are deliberately absent from the build-12340 load graph. The executable navigation, pointer, and modern arrow modules replace their post-Wrath frame and routing contracts.",
+      "source_paths": [
+        "Arrows/Arrows.xml",
+        "Arrows/ArrowSkin.xml",
+        "Arrows/Arrows.lua",
+        "Arrows/ArrowSkin.lua",
+        "Arrows/Starlight/Arrow.lua",
+        "Arrows/Stealth/Arrow.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Navigation.lua",
+        "ZygorGuidesViewer/Pointer.lua",
+        "ZygorGuidesViewer/ModernArrow.lua"
+      ]
+    },
+    {
+      "id": "replace-unloaded-anniversary-localization",
+      "disposition": "replaced",
+      "reason": "The byte-identical 8.1 localization loaders and NPC/quest tables are bundled as dormant reference data, not executable ports. The loaded WotLK locale facade, NPC dataset, and quest compatibility service provide the build-12340 runtime contract; this disposition does not claim full upstream locale-string parity.",
+      "source_globs": [
+        "Localization/**",
+        "Localization-TBC/**"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Locale.lua",
+        "ZygorGuidesViewer/Data-WotLK/NPCData.lua",
+        "ZygorGuidesViewer/Compat/Quest.lua"
+      ]
+    },
+    {
+      "id": "replace-unloaded-anniversary-skin-shell",
+      "disposition": "replaced",
+      "reason": "The byte-identical Skins.xml, default Skin/ViewerFrame Lua/XML, and Midnight style are deliberately not loaded because their 8.1 frame contracts are incompatible with 3.3.5a. Loaded Skins.lua, ModernViewer.lua, and the WotLK-safe Starlight/Stealth style modules are their executable replacements.",
+      "source_paths": [
+        "Skins/Skins.xml",
+        "Skins/Default/Skin.lua",
+        "Skins/Default/Skin.xml",
+        "Skins/Default/ViewerFrame.lua",
+        "Skins/Default/ViewerFrame.xml",
+        "Skins/Default/Midnight/Style.lua"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Skins.lua",
+        "ZygorGuidesViewer/ModernViewer.lua",
+        "ZygorGuidesViewer/Skins/Default/Starlight/Style.lua",
+        "ZygorGuidesViewer/Skins/Default/Stealth/Style.lua"
+      ]
+    },
+    {
+      "id": "adapt-modern-skin-assets",
+      "disposition": "adapted",
+      "reason": "The modern style definitions retain the upstream media contract with WotLK-safe registration changes; the Stealth progress texture is resized to a client-safe power-of-two canvas.",
+      "source_paths": [
+        "Skins/Default/Starlight/Style.lua",
+        "Skins/Default/Starlight-glass/Style.lua",
+        "Skins/Default/Stealth/Style.lua",
+        "Skins/Default/Stealth-glass/Style.lua",
+        "Skins/Default/Stealth/progressbar.tga"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/Skins/Default/Starlight/Style.lua",
+        "ZygorGuidesViewer/Skins/Default/Starlight-glass/Style.lua",
+        "ZygorGuidesViewer/Skins/Default/Stealth/Style.lua",
+        "ZygorGuidesViewer/Skins/Default/Stealth-glass/Style.lua",
+        "ZygorGuidesViewer/Skins/Default/Stealth/progressbar.tga"
+      ]
+    },
+    {
+      "id": "replace-guide-autoloader",
+      "disposition": "replaced",
+      "reason": "The monolithic autoloader is replaced by dependency-ordered Common, Alliance, and Horde guide manifests.",
+      "source_paths": [
+        "Guides-TBC/Autoload.xml"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer_GuidesCommon/Guides.xml",
+        "ZygorGuidesViewer_GuidesAlliance/Guides.xml",
+        "ZygorGuidesViewer_GuidesHorde/Guides.xml"
+      ]
+    },
+    {
+      "id": "replace-tbc-talent-builds",
+      "disposition": "replaced",
+      "reason": "TBC talent trees are invalid for build 12340 and are replaced by the explicitly registered WotLK build corpus.",
+      "source_paths": [
+        "Guides-TBC/TalentAdvisor-Builds.lua"
+      ],
+      "replacement_targets": [
+        "ZygorTalentAdvisor/Builds/LegacyWotLKBuilds.lua"
+      ]
+    },
+    {
+      "id": "adapt-root-files-tbc-loader",
+      "disposition": "adapted",
+      "reason": "The literal files-TBC.xml loader is retained in the executable closure as a compatibility-only aggregate. It runs after the WotLK implementations, loads the source-name root facades, and includes the Code-TBC facade closure; it does not duplicate the target TOC's authoritative implementation order.",
+      "source_paths": [
+        "files-TBC.xml"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/files-TBC.xml"
+      ]
+    },
+    {
+      "id": "exclude-anniversary-source-tocs",
+      "disposition": "intentional_exclusion",
+      "reason": "These are product/flavor packaging manifests for the differently named Interface 20506 Anniversary addon, including a Vanilla rejection stub. Loading or copying them as target manifests would select the wrong addon identity and client interface; the release is intentionally packaged by the separately audited Interface 30300 target TOCs.",
+      "source_paths": [
+        "ZygorGuidesViewerClassicTBCAnniv.toc",
+        "ZygorGuidesViewerClassicTBCAnniv_TBC.toc",
+        "ZygorGuidesViewerClassicTBCAnniv_Vanilla.toc"
+      ]
+    },
+    {
+      "id": "replace-wotlk-gold-appraiser-core",
+      "disposition": "replaced",
+      "reason": "The WotLK appraiser covers named and manually initiated full-house scans, normalized per-unit results, durable realm/faction trends, guide/manual shopping, verified-unbound inventory appraisal, live stack metadata, and guarded user-click bid/post actions. The modern window integrates opportunities, crafting, route discovery, progress status, and safety help without automatic transactions or bag pickup.",
+      "source_paths": [
+        "GoldUI/Gold.lua",
+        "GoldUI/Gold.xml",
+        "GoldUI/ServerTrends.lua",
+        "Code-TBC/GoldUI/Auctiontools-Buy.lua",
+        "Code-TBC/GoldUI/Auctiontools-Sell.lua",
+        "Code-TBC/GoldUI/Auctiontools-View.lua",
+        "Code-TBC/GoldUI/Gold.xml"
+      ],
+      "replacement_targets": [
+        "ZygorGuidesViewer/GoldAppraiser.lua",
+        "ZygorGuidesViewer/ModernGoldTracker.lua",
+        "ZygorGuidesViewer/Compat/Auction.lua",
+        "ZygorGuidesViewer/Database.lua",
+        "ZygorGuidesViewer/ZygorGuidesViewer.toc"
+      ]
+    },
+    {
+      "id": "exclude-duplicate-trial-guides",
+      "disposition": "intentional_exclusion",
+      "reason": "Trial guides duplicate or truncate the retained full registrations and are deliberately excluded from the full release.",
+      "source_globs": [
+        "Guides-TBC/**/*Trial.lua"
+      ]
+    },
+    {
+      "id": "exclude-inactive-poi-guide-data",
+      "disposition": "intentional_exclusion",
+      "reason": "These PoI registrations were outside the active Anniversary load graph; Common.lua was explicitly commented out in Autoload.xml.",
+      "source_paths": [
+        "Guides-TBC/Poi/CLASSIC_A_Rares.lua",
+        "Guides-TBC/Poi/CLASSIC_A_Treasures.lua",
+        "Guides-TBC/Poi/CLASSIC_H_Rares.lua",
+        "Guides-TBC/Poi/CLASSIC_H_Treasures.lua",
+        "Guides-TBC/Poi/Common.lua"
+      ]
+    },
+    {
+      "id": "exclude-anniversary-licence-gates",
+      "disposition": "intentional_exclusion",
+      "reason": "The target is a full GPL content bundle and does not use the source trial/edition licence-key table.",
+      "source_paths": [
+        "Licence.lua"
+      ]
+    }
+  ]
+}

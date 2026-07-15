@@ -1,0 +1,24 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+	<Script file="Images\Images.lua"/>
+
+	<Script file="Includes\General\N_General_Includes.lua"/>
+	<Script file="Includes\General\N_Quest_Includes.lua"/>
+	<Script file="Includes\PetsMounts\N_Mounts_Includes.lua"/>
+	<Script file="Includes\PetsMounts\N_Pets_Includes.lua"/>
+	<Script file="Includes\Professions\N_Professions_Includes.lua"/>
+	<Script file="Includes\Reputations\N_Reputation_Includes.lua"/>
+	<Script file="Includes\Titles\N_Titles_Includes.lua"/>
+
+	<Script file="Dailies\ZygorDailiesCommonCLASSIC.lua"/>
+	<Script file="Dungeons\ZygorGearCommonCLASSIC.lua"/>
+	<Script file="Dungeons\ZygorGearCommonTBC.lua"/>
+	<Script file="Dungeons\ZygorGearCommonWOTLK.lua"/>
+	<Script file="Professions\ZygorProfessionsCommonCLASSIC.lua"/>
+	<Script file="PetsMounts\ZygorPetsCommonCLASSIC.lua"/>
+	<Script file="Reputations\ZygorReputationsCommonCLASSIC.lua"/>
+	<Script file="Gold\ZygorFarmingCommonCLASSIC.lua"/>
+	<Script file="Gold\ZygorGatheringCommonCLASSIC.lua"/>
+	<Script file="Gold\ZygorGoldRunsCommonCLASSIC.lua"/>
+</Ui>

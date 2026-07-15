@@ -1,0 +1,68 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <CheckButton name="ZygorGuidesViewerMaintenanceFrame_But" inherits="UICheckButtonTemplate" virtual="true">
+    <Scripts>
+      <OnShow>
+        if ZGV and ZGV.Maintenance then ZGV.Maintenance:SyncButton(self) end
+      </OnShow>
+      <OnClick>
+        if ZGV and ZGV.Maintenance then ZGV.Maintenance:SetFlag(self.var,self:GetChecked()) end
+      </OnClick>
+      <OnEnter>
+        GameTooltip:SetOwner(self,"ANCHOR_TOP"); GameTooltip:SetText(self.tip or ""); GameTooltip:Show()
+      </OnEnter>
+      <OnLeave>GameTooltip:Hide()</OnLeave>
+    </Scripts>
+  </CheckButton>
+
+  <Frame name="ZygorGuidesViewerMaintenanceFrame" toplevel="true" frameStrata="DIALOG" movable="true" enableMouse="true" hidden="true" parent="UIParent">
+    <Size x="320" y="390"/>
+    <Anchors><Anchor point="CENTER"/></Anchors>
+    <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+      <BackgroundInsets><AbsInset left="11" right="12" top="12" bottom="11"/></BackgroundInsets>
+      <TileSize val="32"/><EdgeSize val="32"/>
+    </Backdrop>
+    <Layers>
+      <Layer level="ARTWORK">
+        <Texture name="$parent_FrameHeader" file="Interface\DialogFrame\UI-DialogBox-Header"><Size x="450" y="64"/><Anchors><Anchor point="TOP"><Offset x="0" y="12"/></Anchor></Anchors></Texture>
+        <FontString inherits="GameFontNormal" text="Zygor Guides Maintenance"><Anchors><Anchor point="TOP" relativeTo="$parent_FrameHeader"><Offset x="0" y="-14"/></Anchor></Anchors></FontString>
+        <FontString name="$parentText" inherits="GameFontHighlightSmall" justifyH="LEFT" justifyV="TOP"><Size x="286" y="58"/><Anchors><Anchor point="BOTTOM"><Offset x="0" y="36"/></Anchor></Anchors></FontString>
+      </Layer>
+    </Layers>
+    <Frames>
+      <CheckButton name="$parent_But01" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT"><Offset x="20" y="-31"/></Anchor></Anchors></CheckButton>
+      <CheckButton name="$parent_But02" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT" relativeTo="$parent_But01" relativePoint="BOTTOMLEFT"><Offset x="0" y="-5"/></Anchor></Anchors></CheckButton>
+      <CheckButton name="$parent_But03" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT" relativeTo="$parent_But02" relativePoint="BOTTOMLEFT"><Offset x="0" y="-5"/></Anchor></Anchors></CheckButton>
+      <CheckButton name="$parent_But04" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT" relativeTo="$parent_But03" relativePoint="BOTTOMLEFT"><Offset x="0" y="-5"/></Anchor></Anchors></CheckButton>
+      <CheckButton name="$parent_But05" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT" relativeTo="$parent_But04" relativePoint="BOTTOMLEFT"><Offset x="0" y="-5"/></Anchor></Anchors></CheckButton>
+      <CheckButton name="$parent_But06" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT" relativeTo="$parent_But05" relativePoint="BOTTOMLEFT"><Offset x="0" y="-5"/></Anchor></Anchors></CheckButton>
+      <CheckButton name="$parent_But07" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT" relativeTo="$parent_But06" relativePoint="BOTTOMLEFT"><Offset x="0" y="-5"/></Anchor></Anchors></CheckButton>
+      <CheckButton name="$parent_But08" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT" relativeTo="$parent_But07" relativePoint="BOTTOMLEFT"><Offset x="0" y="-5"/></Anchor></Anchors></CheckButton>
+      <CheckButton name="$parent_But09" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT" relativeTo="$parent_But08" relativePoint="BOTTOMLEFT"><Offset x="0" y="-5"/></Anchor></Anchors></CheckButton>
+      <CheckButton name="$parent_But10" inherits="ZygorGuidesViewerMaintenanceFrame_But"><Anchors><Anchor point="TOPLEFT" relativeTo="$parent_But09" relativePoint="BOTTOMLEFT"><Offset x="0" y="-5"/></Anchor></Anchors></CheckButton>
+      <Button name="$parent_CloseButton" inherits="UIPanelCloseButton"><Anchors><Anchor point="TOPRIGHT"><Offset x="9" y="7"/></Anchor></Anchors></Button>
+      <Button name="$parent_Bug" inherits="GameMenuButtonTemplate" text="Diagnostics"><Size x="110" y="22"/><Anchors><Anchor point="BOTTOM"><Offset x="0" y="10"/></Anchor></Anchors><Scripts><OnClick>if ZGV and ZGV.Maintenance then ZGV.Maintenance:Report() end</OnClick></Scripts></Button>
+    </Frames>
+    <Scripts>
+      <OnLoad>
+        local labels={
+          {"maint_dostartup","STARTUP: startup loop","Enable this first when narrowing down a startup problem."},
+          {"maint_startup_01","STARTUP: database","Initial saved-variable and compatibility setup."},
+          {"maint_startup_pointer","STARTUP: navigation","Navigation and pointer services."},
+          {"maint_startup_modules","STARTUP: modules","Core module startup callbacks."},
+          {"maint_startup_loadguides","STARTUP: load guides","Content addon and guide loading."},
+          {"maint_startup_final","STARTUP: final","Final startup notification."},
+          {"maint_startup_startguide","STARTUP: restore guide","Restoring the selected guide."},
+          {"maint_enableprogressbar","progress display","Guide progress display."},
+          {"maint_fetchquestdata","quest data","Quest title and completion cache requests."},
+          {"maint_fetchitemdata","item data","Item name and tooltip cache requests."},
+        }
+        for index,data in ipairs(labels) do
+          local button=_G[self:GetName()..("_But%02d"):format(index)]
+          button.var=data[1]; button.txt=data[2]; button.tip=data[3]
+        end
+        _G[self:GetName().."Text"]:SetText("Hold Shift while logging in to open this safe-start panel. Enable checks one at a time, reload, and use Diagnostics to report the first failing stage.")
+      </OnLoad>
+      <OnShow>if ZGV and ZGV.Maintenance then ZGV.Maintenance:Sync() end</OnShow>
+    </Scripts>
+  </Frame>
+</Ui>

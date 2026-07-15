@@ -1,0 +1,33 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <!-- Build-12340 template subset.  The full Anniversary XML relies on
+       newer XML helpers; Lua builds those rich controls in
+       this port, while these public templates remain safe for integrations. -->
+  <PlayerModel name="ZygorGuidesViewerPlayerModel" virtual="true">
+    <Size x="300" y="300"/>
+    <Scripts>
+      <OnLoad>
+        self.SetAutoRotation=function(model,speed) model.autorotationspeed=tonumber(speed) or 0 model.facing=0 end
+        self.SetModels=function(model,models) model.models=type(models)=="table" and models or {models}; if model.models[1] then model:ShowModel(model.models[1]) end end
+        self.ShowModel=function(model,display) if display then model:SetDisplayInfo(display) end model:RefreshCamera() end
+        self.SetSlideshow=function(model,seconds) model.slideshow=tonumber(seconds) model.slideElapsed=0 model.slideIndex=1 end
+      </OnLoad>
+      <OnUpdate>
+        if self.autorotationspeed then self.facing=(self.facing or 0)+elapsed*self.autorotationspeed self:SetFacing(self.facing) end
+        if self.slideshow and self.models and #self.models&gt;0 then self.slideElapsed=(self.slideElapsed or 0)+elapsed if self.slideElapsed&gt;=self.slideshow then self.slideIndex=(self.slideIndex or 1)%#self.models+1 self:ShowModel(self.models[self.slideIndex]) self.slideElapsed=0 end end
+      </OnUpdate>
+    </Scripts>
+  </PlayerModel>
+  <Button name="ZygorSearchButton" virtual="true" frameStrata="MEDIUM">
+    <Size x="25" y="25"/>
+    <Scripts>
+      <OnEnter>if self.tooltiptext then GameTooltip:SetOwner(self,"ANCHOR_TOPLEFT") GameTooltip:SetText(self.tooltiptext) GameTooltip:Show() end</OnEnter>
+      <OnLeave>GameTooltip:Hide()</OnLeave>
+      <OnLoad>self:SetNormalTexture(ZygorGuidesViewer.DIR.."\\Skins\\findinzygor")</OnLoad>
+    </Scripts>
+  </Button>
+  <Button name="ZygorIndicatorButton" virtual="true" frameStrata="MEDIUM">
+    <Size x="25" y="25"/>
+    <Scripts><OnLoad>if ZygorGuidesViewer.ButtonSets and ZygorGuidesViewer.ButtonSets.Minimap then ZygorGuidesViewer.ButtonSets.Minimap.NORMAL:AssignToButton(self) end</OnLoad></Scripts>
+  </Button>
+  <Button name="ZygorActionButton" virtual="true" frameStrata="MEDIUM" inherits="SecureActionButtonTemplate,SecureHandlerStateTemplate"/>
+</Ui>

@@ -1,0 +1,21 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+    <Script file="Bootstrap.lua"/>
+    <Script file="Client.lua"/>
+    <Script file="Timer.lua"/>
+    <Script file="Quest.lua"/>
+    <Script file="Gossip.lua"/>
+    <Script file="Item.lua"/>
+    <Script file="Container.lua"/>
+    <Script file="Spell.lua"/>
+    <Script file="Talent.lua"/>
+    <Script file="Profession.lua"/>
+    <Script file="Map.lua"/>
+    <Script file="Taxi.lua"/>
+    <Script file="Auction.lua"/>
+    <Script file="Chat.lua"/>
+    <Script file="Tooltip.lua"/>
+    <Script file="UI.lua"/>
+</Ui>
+

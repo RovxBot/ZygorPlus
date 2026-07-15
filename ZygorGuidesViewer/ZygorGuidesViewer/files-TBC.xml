@@ -1,0 +1,15 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <!--
+    Literal source-name compatibility closure.  All WotLK implementations are
+    loaded earlier by ZygorGuidesViewer.toc; these files only restore public
+    entry points and delegate to those authoritative modules.
+  -->
+  <Script file="Log.lua"/>
+  <Script file="ErrorLogger.lua"/>
+  <Script file="Localizers.lua"/>
+  <Script file="BugReport.lua"/>
+  <Script file="MacroGuide.lua"/>
+  <Script file="NotificationCenter.lua"/>
+  <Script file="ActionBar.lua"/>
+  <Include file="Code-TBC\files.xml"/>
+</Ui>

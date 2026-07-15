@@ -1,0 +1,17 @@
+<Bindings>
+  <Binding name="ZYGOR_TOGGLE" header="ZYGOR_GUIDES">
+    ZygorGuidesViewer:ToggleFrame()
+  </Binding>
+  <Binding name="ZYGOR_NEXTSTEP">
+    ZygorGuidesViewer.Runtime:NextStep(true)
+  </Binding>
+  <Binding name="ZYGOR_PREVSTEP">
+    ZygorGuidesViewer.Runtime:PreviousStep()
+  </Binding>
+  <Binding name="ZYGOR_MAGICKEY">
+    ZygorGuidesViewer:MagicKey()
+  </Binding>
+  <Binding name="ZYGORTALENTADVISOR_OPENPOPUP" header="ZYGOR_TALENT_ADVISOR">
+    if ZygorGuidesViewer.TalentAdvisor then ZygorGuidesViewer.TalentAdvisor:Toggle() end
+  </Binding>
+</Bindings>

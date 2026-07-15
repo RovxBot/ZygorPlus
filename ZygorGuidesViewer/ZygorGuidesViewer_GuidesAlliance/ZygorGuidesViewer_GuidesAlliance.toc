@@ -1,0 +1,22 @@
+## Interface: 30300
+## Title: Zygor Guides Viewer - Alliance Guides (WotLK)
+## Notes: Full Alliance Classic/TBC guides plus legacy Wrath 70-80 leveling content.
+## Author: Zygor Guides / ZygorPlus port
+## Version: 0.1.0
+## X-License: GPL
+## X-Website: http://zygorguides.com/
+## X-eMail: zygor@zygorguides.com
+## RequiredDeps: ZygorGuidesViewer, ZygorGuidesViewer_GuidesCommon
+## LoadOnDemand: 1
+## DefaultState: enabled
+## X-Zygor-Content-Schema: 1
+## X-Zygor-Content-Kind: alliance
+## X-Zygor-Content-Priority: 200
+## X-Zygor-Source: ZygorGuidesViewerClassicTBCAnniv-8.1+legacy-2.0.1327
+## X-Zygor-Trial-Content: 0
+## X-Zygor-Legacy-Wrath-Leveling: 5
+## X-Zygor-Legacy-Wrath-Dailies: 69
+
+Manifest.lua
+Guides.xml
+Finish.lua

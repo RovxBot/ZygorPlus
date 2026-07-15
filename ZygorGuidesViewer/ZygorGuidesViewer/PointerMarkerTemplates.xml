@@ -1,0 +1,28 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <!-- Legacy template names retained for integrations. Navigation creates its
+       own WotLK pins, but these templates provide matching, packaged textures
+       for callers that instantiate marker frames directly. -->
+  <Button name="ZygorGuidesViewerPointerMinimapMarker" virtual="true" hidden="true" enableMouse="true">
+    <Size x="18" y="18"/>
+    <Layers>
+      <Layer level="ARTWORK">
+        <Texture name="$parentIcon" file="Interface\AddOns\ZygorGuidesViewer\Skins\minimaparrow-player">
+          <Size x="18" y="18"/><Anchors><Anchor point="CENTER"/></Anchors>
+        </Texture>
+        <Texture name="$parentArrow" hidden="true" file="Interface\AddOns\ZygorGuidesViewer\Skins\arrowup">
+          <Size x="22" y="22"/><Anchors><Anchor point="CENTER"/></Anchors>
+        </Texture>
+      </Layer>
+    </Layers>
+    <Scripts><OnLoad>self.icon=_G[self:GetName().."Icon"] self.arrow=_G[self:GetName().."Arrow"] self:RegisterForClicks("LeftButtonUp","RightButtonUp")</OnLoad></Scripts>
+  </Button>
+  <Button name="ZygorGuidesViewerPointerWorldMapMarker" virtual="true" hidden="true" enableMouse="true">
+    <Size x="22" y="22"/>
+    <Layers><Layer level="ARTWORK">
+      <Texture name="$parentIcon" file="Interface\AddOns\ZygorGuidesViewer\Skins\minimaparrow-player">
+        <Size x="22" y="22"/><Anchors><Anchor point="CENTER"/></Anchors>
+      </Texture>
+    </Layer></Layers>
+    <Scripts><OnLoad>self.icon=_G[self:GetName().."Icon"] self:RegisterForClicks("LeftButtonUp","RightButtonUp")</OnLoad></Scripts>
+  </Button>
+</Ui>

@@ -1,0 +1,23 @@
+## Interface: 30300
+## Title: Zygor Talent Advisor - Legacy Settings Bridge
+## Notes: Imports old Talent Advisor settings and Wrath build data; no legacy UI code is loaded.
+## Author: ZygorPlus port
+## Version: 0.1.0
+## X-License: GPL
+## X-Website: http://zygorguides.com/
+## X-eMail: zygor@zygorguides.com
+## RequiredDeps: ZygorGuidesViewer
+## LoadOnDemand: 1
+## DefaultState: enabled
+## SavedVariables: ZygorTalentAdvisorSettings
+## X-Zygor-Bridge-Schema: 1
+## X-Zygor-Bridge-Type: legacy-talent-settings
+## X-Zygor-Loads-Legacy-UI: 0
+## X-Zygor-Source-Builds: 78
+## X-Zygor-Release-Builds: 67
+## X-Zygor-Filtered-Debug-Builds: 11
+
+MigrationBridge.lua
+Builds\BeginRegistration.lua
+Builds\LegacyWotLKBuilds.lua
+Builds\EndRegistration.lua

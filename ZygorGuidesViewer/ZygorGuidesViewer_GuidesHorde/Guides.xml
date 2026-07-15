@@ -1,0 +1,34 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+	<Script file="Includes\General\H_General_Includes.lua"/>
+	<Script file="Includes\General\H_Quest_Includes.lua"/>
+	<Script file="Includes\PetsMounts\H_Mounts_Includes.lua"/>
+	<Script file="Includes\PetsMounts\H_Pets_Includes.lua"/>
+	<Script file="Includes\Professions\H_Professions_Includes.lua"/>
+	<Script file="Includes\Reputations\H_Reputation_Includes.lua"/>
+	<Script file="Includes\Titles\H_Titles_Includes.lua"/>
+
+	<Script file="Leveling\ZygorLevelingHordeCLASSIC.lua"/>
+	<Script file="Dailies\ZygorDailiesHordeCLASSIC.lua"/>
+	<Script file="Dungeons\ZygorDungeonHordeCLASSIC.lua"/>
+	<Script file="Dungeons\ZygorDungeonScenariosHordeCLASSIC.lua"/>
+	<Script file="Dungeons\ZygorGearHordeCLASSIC.lua"/>
+	<Script file="Professions\ZygorProfessionsHordeCLASSIC.lua"/>
+	<Script file="PetsMounts\ZygorHunterPetHordeCLASSIC.lua"/>
+	<Script file="PetsMounts\ZygorMountsHordeCLASSIC.lua"/>
+	<Script file="PetsMounts\ZygorPetsHordeCLASSIC.lua"/>
+	<Script file="Titles\ZygorTitlesHordeCLASSIC.lua"/>
+	<Script file="Reputations\ZygorReputationsHordeCLASSIC.lua"/>
+	<Script file="Events\ZygorEventsHordeCLASSIC.lua"/>
+	<Script file="Gold\ZygorFarmingHordeCLASSIC.lua"/>
+	<Script file="Gold\ZygorGatheringHordeCLASSIC.lua"/>
+	<Script file="Gold\ZygorGoldRunsHordeCLASSIC.lua"/>
+
+	<Script file="Legacy-Wrath\BeginFilter.lua"/>
+	<Script file="Legacy-Wrath\ZygorLevelingHordeWOTLK.lua"/>
+	<Script file="Legacy-Wrath\EndFilter.lua"/>
+	<Script file="Legacy-Wrath\BeginDailiesFilter.lua"/>
+	<Script file="Legacy-Wrath\ZygorDailiesHordeWOTLK.lua"/>
+	<Script file="Legacy-Wrath\EndDailiesFilter.lua"/>
+</Ui>
