@@ -139,15 +139,21 @@ release.
 ## Create a GitHub release
 
 The **Create release** GitHub Actions workflow is the public release profile.
-It is intentionally manual. Before triggering it, commit and push the final
-sources with a semantic version (for example `0.1.13`) and release channel in
-`release.json`, then select that commit's branch in **Actions → Create release
-→ Run workflow**. The workflow derives and checks availability of the matching
-`v0.1.13` tag, runs the complete automated suite and strict addon validation,
+It is intentionally manual. Commit and push the final sources with a semantic
+version (for example `0.1.13`) and release channel in `release.json`, then
+select that branch in **Actions → Create release → Run workflow**. The version
+sets the release's major/minor stream and minimum patch. The workflow checks
+remote tags and uses that version when it is free; otherwise it automatically
+selects the next patch after the highest `vX.Y.Z` tag in that stream. It writes
+the selected version into `release.json` and commits that change on the chosen
+branch before tagging it.
+
+The workflow runs the complete automated suite and strict addon validation,
 builds the deterministic ZIP and checksum, preserves them as workflow
 artifacts, creates and pushes an annotated release tag, then creates the GitHub
-Release with generated notes. It refuses an existing release or tag and never
-creates a tag until the selected channel's gates have passed.
+Release with generated notes. It never creates a tag until the selected
+channel's gates have passed. To begin a new minor or major series, update the
+version in `release.json` before running the workflow.
 
 The workflow requires the repository's Actions `GITHUB_TOKEN` to have
 **Contents: write** permission. An `alpha` channel creates a GitHub **pre-release**

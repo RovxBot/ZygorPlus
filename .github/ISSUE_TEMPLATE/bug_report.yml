@@ -10,14 +10,12 @@ body:
         and any other private information before attaching logs
         or screenshots.
 
-  - type: dropdown
+  - type: input
     id: release
     attributes:
       label: ZygorPlus release
-      description: Select the installed release. Include the ZIP SHA-256 below if you have it.
-      options:
-        - v0.1.13 alpha
-        - Other / self-built version
+      description: Enter the installed release tag. Include the ZIP SHA-256 below if you have it.
+      placeholder: e.g. v0.1.14 alpha
     validations:
       required: true
 
