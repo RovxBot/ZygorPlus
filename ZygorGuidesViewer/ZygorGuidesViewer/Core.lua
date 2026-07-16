@@ -17,7 +17,7 @@ ZGV.version = "8.1.0-wotlk.13"
 -- Bump this whenever a client-facing package is deployed.  It is included in
 -- the first session diagnostic so a reload can be verified from the client
 -- log rather than inferred from file timestamps.
-ZGV.buildRevision = "20260715-travel-refresh-01"
+ZGV.buildRevision = "20260716-hearth-bind-awareness-01"
 ZGV.interface = 30300
 ZGV.targetBuild = 12340
 ZGV.DIR = "Interface\\AddOns\\ZygorGuidesViewer"

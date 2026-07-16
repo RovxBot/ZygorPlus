@@ -765,7 +765,14 @@ local function cooldownReady(getter,id)
   if type(getter)~="function" then return true end
   local start,duration,enabled=getter(id)
   if enabled==0 then return false end
-  return not (tonumber(start) and tonumber(start)>0 and tonumber(duration) and tonumber(duration)>0)
+  start,duration=tonumber(start) or 0,tonumber(duration) or 0
+  -- Spell cooldown APIs report the shared global cooldown as if every spell
+  -- were unavailable.  It must not continuously remove/re-add Astral Recall
+  -- from the route graph whenever the player casts an unrelated ability.
+  if duration>0 and duration<=1.6 then return true end
+  if start<=0 or duration<=0 then return true end
+  local now=type(GetTime)=="function" and GetTime() or 0
+  return start+duration<=now+.05
 end
 
 -- The 3.3.5 client reports the character's bind by its inn/city name, not a
@@ -808,11 +815,9 @@ function Navigation:GetAvailableTravelPorts(data)
     local available=enabled
     if available and port.item then
       available=type(GetItemCount)=="function" and (tonumber(GetItemCount(port.item)) or 0)>0
-      if available and type(IsUsableItem)=="function" then available=IsUsableItem(port.item) and true or false end
       if available then available=cooldownReady(GetItemCooldown,port.item) end
     elseif available and port.spell then
       available=type(IsSpellKnown)=="function" and IsSpellKnown(port.spell)
-      if available and type(IsUsableSpell)=="function" then available=IsUsableSpell(port.spell) and true or false end
       if available then available=cooldownReady(GetSpellCooldown,port.spell) end
     else
       available=false

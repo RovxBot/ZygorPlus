@@ -48,6 +48,22 @@ function Conditions:Faction(value)
   return tostring(value or ""):gsub("[_%s%-]",""):lower()==self.factionName
 end
 
+-- GetBindLocation is the authoritative 3.3.5a source for the Hearthstone's
+-- destination. Return nil when the client cannot provide it so old clients do
+-- not lose guide steps merely because the capability is unavailable.
+function Conditions:Bound(name)
+  if type(GetBindLocation)~="function" then return nil end
+  local current=GetBindLocation("player")
+  if not current or current=="" then current=GetBindLocation() end
+  if not current or current=="" then return nil end
+  local function compactLocation(value)
+    return tostring(value or ""):lower():gsub("[^%a%d]","")
+  end
+  local wanted=compactLocation(name)
+  if wanted=="" then return current end
+  return compactLocation(current)==wanted
+end
+
 function Conditions:CompletedQuest(...)
   for i=1,select("#",...) do if questCall("IsCompleted",select(i,...)) then return true end end
   return false
@@ -276,6 +292,8 @@ bind("money","Money")
 bind("havebuff","HaveBuff")
 bind("hasbuff","HaveBuff")
 bind("faction","Faction")
+bind("bound","Bound")
+bind("hearthbound","Bound")
 safe.level=function() return UnitLevel("player") or 0 end
 safe.isdead=function() return UnitIsDeadOrGhost("player") and true or false end
 safe.ontaxi=function() return UnitOnTaxi and UnitOnTaxi("player") or false end
