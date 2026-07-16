@@ -145,8 +145,9 @@ select that branch in **Actions → Create release → Run workflow**. The versi
 sets the release's major/minor stream and minimum patch. The workflow checks
 remote tags and uses that version when it is free; otherwise it automatically
 selects the next patch after the highest `vX.Y.Z` tag in that stream. It writes
-the selected version into `release.json` and commits that change on the chosen
-branch before tagging it.
+the selected version into the archive filename and tags the selected commit;
+it does not push a release commit to the chosen branch. This lets the workflow
+run from a protected branch.
 
 The workflow runs the complete automated suite and strict addon validation,
 builds the deterministic ZIP and checksum, preserves them as workflow
