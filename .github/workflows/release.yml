@@ -34,17 +34,18 @@ jobs:
           sudo apt-get install --yes lua5.1
           sudo ln -sf "$(command -v lua5.1)" /usr/local/bin/lua
 
-      - name: Verify release metadata and tag availability
+      - name: Select the next release version
         id: release_metadata
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          VERSION="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8"))["version"])')"
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "tools/release.json must contain an X.Y.Z release version; found '$VERSION'." >&2
+          if [[ "$GITHUB_REF" != refs/heads/* ]]; then
+            echo "Create release must be run from a branch, not '$GITHUB_REF'." >&2
             exit 1
           fi
+          BASE_VERSION="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8"))["version"])')"
+          RELEASE_VERSION="$(git ls-remote --tags --refs origin | python3 tools/next_release_version.py --base-version "$BASE_VERSION")"
           RELEASE_CHANNEL="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8")).get("release_channel", "stable"))')"
           case "$RELEASE_CHANNEL" in
             alpha|stable) ;;
@@ -53,17 +54,29 @@ jobs:
               exit 1
               ;;
           esac
-          RELEASE_TAG="v$VERSION"
+          RELEASE_TAG="v$RELEASE_VERSION"
           if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null; then
-            echo "The tag $RELEASE_TAG already exists." >&2
+            echo "The selected tag $RELEASE_TAG already exists; retry the workflow to select a newer patch." >&2
             exit 1
           fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "A GitHub release already exists for $RELEASE_TAG." >&2
             exit 1
           fi
+          python3 - "$RELEASE_VERSION" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          manifest_path = Path("tools/release.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["version"] = sys.argv[1]
+          manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+          PY
+          printf 'RELEASE_VERSION=%s\n' "$RELEASE_VERSION" >> "$GITHUB_ENV"
           printf 'RELEASE_TAG=%s\n' "$RELEASE_TAG" >> "$GITHUB_ENV"
           printf 'RELEASE_CHANNEL=%s\n' "$RELEASE_CHANNEL" >> "$GITHUB_ENV"
+          printf 'release_version=%s\n' "$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           printf 'release_tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           printf 'release_channel=%s\n' "$RELEASE_CHANNEL" >> "$GITHUB_OUTPUT"
 
@@ -106,7 +119,13 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag --annotate "$RELEASE_TAG" --message "ZygorPlus ${RELEASE_TAG#v} (${RELEASE_CHANNEL})" "$GITHUB_SHA"
+          git add tools/release.json
+          if ! git diff --cached --quiet; then
+            git commit --message "chore(release): $RELEASE_TAG"
+            git push origin "HEAD:$GITHUB_REF"
+          fi
+          RELEASE_COMMIT="$(git rev-parse HEAD)"
+          git tag --annotate "$RELEASE_TAG" --message "ZygorPlus ${RELEASE_TAG#v} (${RELEASE_CHANNEL})" "$RELEASE_COMMIT"
           git push origin "refs/tags/$RELEASE_TAG"
 
       - name: Publish GitHub release
