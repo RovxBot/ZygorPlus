@@ -111,6 +111,10 @@ local skillRanks,skillMaximums={},{}
 function ZGV.Conditions:Skill(name) return skillRanks[tostring(name or ""):lower()] or 0 end
 function ZGV.Conditions:SkillMax(name) return skillMaximums[tostring(name or ""):lower()] or 0 end
 function ZGV.Conditions:Reputation() return 0 end
+local bindLocation="Shattrath City"
+function ZGV.Conditions:Bound(name)
+  return tostring(name or ""):lower()==bindLocation:lower()
+end
 
 dofile(addon .. "Runtime.lua")
 local Runtime = ZGV.Runtime
@@ -145,6 +149,63 @@ Runtime.lastAdvance=GetTime()
 Runtime:OnEvent("SKILL_LINES_CHANGED")
 assertEqual(Runtime.currentStep,2,"training immediately advances to the next profession stage")
 skillRanks.engineering,skillMaximums.engineering=0,0
+
+-- A Hearthstone instruction is useful only when the character is actually
+-- bound to the authored destination. Otherwise it must skip to the following
+-- goal so regular route planning can direct the player there.
+local hearthGuide=assert(ZGV.Parser:ParseEntry({
+  id="hearth-runtime",title="Hearth runtime",header={},raw=[[
+step
+use Hearthstone##6948
+Hearth to Thunderlord Stronghold |complete subzone("Thunderlord Stronghold") |q 10505
+step
+talk Gor'drek##21117 |goto Blade's Edge Mountains/0 52.32,57.75
+]]
+}))
+assertEqual(hearthGuide.steps[1].hearthDestination,"Thunderlord Stronghold",
+  "runtime receives the authored hearth destination")
+Runtime.currentGuide,Runtime.currentStep=hearthGuide,1
+Runtime.lastAdvance=0
+assertEqual(Runtime:IsStepApplicable(hearthGuide.steps[1]),false,
+  "Shattrath bind makes the Thunderlord hearth step inapplicable")
+Runtime:Tick(true)
+assertEqual(Runtime.currentStep,2,"mismatched hearth step advances to normal travel target")
+bindLocation="Thunderlord Stronghold"
+assertEqual(Runtime:IsStepApplicable(hearthGuide.steps[1]),true,
+  "matching bind keeps the authored hearth instruction available")
+bindLocation="Shattrath City"
+Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionIssues = {} }
+
+-- A standalone no-hearth directive may itself be conditional, but that
+-- condition must never make the preceding quest objective or its whole step
+-- inapplicable. In Blade's Edge this previously skipped the unfinished
+-- Bladespire half of quest 10544 as soon as the player left Bloodmaul.
+local curseGuide=assert(ZGV.Parser:ParseEntry({
+  id="curse-both-clans",title="A Curse Upon Both of Your Clans",header={},raw=[[
+step
+use Wicked Strong Fetish##30479
+kill Bladespire Evil Spirit##21446+
+Curse #5# Bladespire Hold Buildings |q 10544/1 |goto Blade's Edge Mountains/0 41.98,57.50
+|nohearth |only if subzone("Southmaul Tower") or subzone("Bloodmaul Outpost") or subzone("Bloodmaul Ravine")
+step
+talk T'chali the Witch Doctor##21349
+turnin A Curse Upon Both of Your Clans!##10544 |goto Blade's Edge Mountains/0 44.97,72.30
+]]
+}))
+local curseStep=curseGuide.steps[1]
+local curseObjective=curseStep.goals[#curseStep.goals]
+assertEqual(curseStep.onlyIf,nil,"conditional no-hearth does not condition the quest step")
+assertEqual(curseObjective.onlyIf,nil,"conditional no-hearth does not condition the quest objective")
+assertEqual(curseStep.travelConfig.use_hearth,false,"standalone no-hearth still disables hearth routing")
+assert(curseStep.travelConfig.noHearthIf and curseStep.travelConfig.noHearthIf:find("Bloodmaul Outpost",1,true),
+  "the no-hearth condition remains available as travel metadata")
+log[10544]={objectives={{finished=false,current=0,required=5}},complete=false}
+Runtime.currentGuide=curseGuide
+local curseState=Runtime:GetStepState(curseStep,1)
+assertEqual(curseState.complete,false,"unfinished Bladespire buildings block automatic progression")
+assertEqual(curseState.skipped,false,"leaving Bloodmaul does not skip the Bladespire objective")
+log[10544]=nil
+Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionIssues = {} }
 
 local shadowyGuide=assert(ZGV.Parser:ParseEntry({
   id="shadowy-runtime",title="Shadowy runtime",header={},raw=[[
@@ -201,10 +262,10 @@ Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionI
 -- requiring a guide-step change. Completing the final point manually must
 -- then advance immediately and rebuild navigation for the following step.
 local waypointHistory={}
-local arrivedFirst=false
+local currentArrivalX
 ZGV.Navigation={
   waypoint=nil,
-  IsArrived=function(_,destination) return arrivedFirst and destination and destination.x==.10 end,
+  IsArrived=function(_,destination) return destination and destination.x==currentArrivalX end,
   IsMapTransitionComplete=function() return false end,
   SetWaypoint=function(self,destination,title)
     self.waypoint=destination
@@ -214,6 +275,7 @@ ZGV.Navigation={
   ClearWaypoint=function(self) self.waypoint=nil end,
 }
 Runtime.manual={}
+Runtime.arrivals={}
 Runtime.waypointGoalKey=nil
 Runtime.currentGuide={id="movement-path",title="Movement path",conditionIssues={},steps={
   {goals={
@@ -221,22 +283,34 @@ Runtime.currentGuide={id="movement-path",title="Movement path",conditionIssues={
     {action="goto",text="Follow the path up",destination={mapKey="Nagrand/0",x=.20,y=.20}},
   }},
   {goals={
-    {action="goto",text="Enter the cave",destination={mapKey="Nagrand/0",x=.30,y=.30}},
+    {action="talk",text="Talk to the quest giver",npcID=123,destination={mapKey="Nagrand/0",x=.30,y=.30}},
+    {action="accept",text="Accept the next quest",questID=999,destination={mapKey="Nagrand/0",x=.30,y=.30}},
   }},
 }}
 Runtime.currentStep=1
 Runtime.lastAdvance=0
 Runtime:UpdateWaypoint()
 assertEqual(waypointHistory[#waypointHistory].destination.x,.10,"first path point is selected")
-arrivedFirst=true
+currentArrivalX=.10
 Runtime:Tick()
 assertEqual(Runtime.currentStep,1,"reaching an intermediate path point keeps its guide step active")
 assertEqual(waypointHistory[#waypointHistory].destination.x,.20,"arrival points navigation at the next path point")
+currentArrivalX=nil
+local firstComplete=Runtime:IsGoalComplete(Runtime.currentGuide.steps[1].goals[1],1,1)
+assertEqual(firstComplete,true,"reached path point remains complete after the player moves away")
+Runtime:UpdateWaypoint()
+assertEqual(waypointHistory[#waypointHistory].destination.x,.20,"moving away does not reactivate the reached path point")
+currentArrivalX=.20
+Runtime:Tick(true)
+assertEqual(Runtime.currentStep,2,"reaching the final path point advances immediately")
+assertEqual(waypointHistory[#waypointHistory].destination.x,.30,"automatic path completion points to the next talk target")
+assertEqual(waypointHistory[#waypointHistory].title,"Talk to the quest giver","automatic completion rebuilds the next goal title")
 
 Runtime.manual={}
+Runtime.arrivals={}
 Runtime.waypointGoalKey=nil
 Runtime.currentStep=1
-arrivedFirst=false
+currentArrivalX=nil
 Runtime:UpdateWaypoint()
 assert(Runtime:ActivateGoal(1,1),"manual completion accepts the first path point")
 assertEqual(Runtime.currentStep,1,"manual intermediate completion keeps its guide step active")
@@ -244,6 +318,7 @@ assertEqual(waypointHistory[#waypointHistory].destination.x,.20,"manual completi
 assert(Runtime:ActivateGoal(1,2),"manual completion accepts the final path point")
 assertEqual(Runtime.currentStep,2,"manual final path completion advances immediately")
 assertEqual(waypointHistory[#waypointHistory].destination.x,.30,"manual final completion points to the next guide step")
+assertEqual(waypointHistory[#waypointHistory].title,"Talk to the quest giver","manual completion rebuilds the next goal title")
 ZGV.Navigation={
   IsArrived=function() return false end,
   IsMapTransitionComplete=function(_,transition)

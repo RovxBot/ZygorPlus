@@ -77,6 +77,7 @@ GetItemCooldown=function() return 0,0,1 end
 IsSpellKnown=function(spell) return spell==556 end
 IsUsableSpell=function() return true end
 GetSpellCooldown=function() return 0,0,1 end
+GetTime=function() return 100 end
 
 dofile(repo.."/ZygorGuidesViewer/ZygorGuidesViewer/Navigation.lua")
 local Navigation=assert(ZGV.Navigation,"navigation module did not load")
@@ -108,6 +109,21 @@ assertEqual(sawBoat,true,"route connects flight path to boat")
 route=assert(Navigation:FindRoute(nil,{key="Stormwind City/0",x=.50,y=.60,title="Stormwind objective"}),"Astral Recall route was not found")
 assertEqual(route.path[1].mode,"astral","ready Astral Recall is preferred over Hearthstone")
 assertEqual(route.path[1].label,"Stormwind","Astral Recall names the bound destination")
+
+-- The spell API exposes the global cooldown through GetSpellCooldown. It is
+-- not Astral Recall's actual cooldown and must not make the route graph churn
+-- every time the player casts an unrelated spell.
+GetSpellCooldown=function() return 99.5,1.5,1 end
+local ports=Navigation:GetAvailableTravelPorts(ZGV.Data.routes)
+local sawAstral=false
+for _,port in ipairs(ports) do if port.mode=="astral" then sawAstral=true end end
+assertEqual(sawAstral,true,"global cooldown does not remove Astral Recall from routing")
+GetSpellCooldown=function() return 50,900,1 end
+ports=Navigation:GetAvailableTravelPorts(ZGV.Data.routes)
+sawAstral=false
+for _,port in ipairs(ports) do if port.mode=="astral" then sawAstral=true end end
+assertEqual(sawAstral,false,"real Astral Recall cooldown removes the travel option")
+GetSpellCooldown=function() return 0,0,1 end
 
 -- Regression from live testing: an active Nagrand goal in Zangarmarsh must
 -- prefer the learned Garadar -> Zabra'jin flight over the two-border detour

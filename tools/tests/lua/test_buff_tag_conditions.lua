@@ -14,11 +14,15 @@ end
 function GetSpellInfo(id)
   if id==32756 then return "Shadowy Disguise" end
 end
+local bindLocation="Shattrath City"
+function GetBindLocation() return bindLocation end
 
 dofile(addon.."Conditions.lua")
 local Conditions=assert(ZygorGuidesViewer.Conditions)
 assert(Conditions:HaveBuff("Shadowy Disguise##32756"),"name-plus-ID buff tags resolve through UnitBuff")
 assert(Conditions:HaveBuff(32756),"numeric buff tags resolve through GetSpellInfo")
+assert(Conditions:Bound("Shattrath City"),"bind condition accepts the live Hearthstone destination")
+assert(not Conditions:Bound("Thunderlord Stronghold"),"bind condition rejects a different authored destination")
 
 dofile(addon.."Parser.lua")
 local Parser=assert(ZygorGuidesViewer.Parser)
@@ -26,6 +30,17 @@ local modifiers=Parser:ParseModifiers({"havebuff Shadowy Disguise##32756"})
 local goal=Parser:ParseGoal("talk Scout Neftis##18714",modifiers)
 assert(goal.haveBuff==32756,"havebuff modifier preserves its spell ID")
 assert(goal.spellID==32756,"havebuff modifier exposes the spell ID to Runtime")
+local hearthGuide=assert(Parser:ParseEntry({
+  id="hearth-bind",title="Hearth bind",header={},raw=[[
+step
+use Hearthstone##6948
+Hearth to Thunderlord Stronghold |complete subzone("Thunderlord Stronghold") |q 10505
+step
+talk Gor'drek##21117 |goto Blade's Edge Mountains/0 52.32,57.75
+]]
+}))
+assert(hearthGuide.steps[1].hearthDestination=="Thunderlord Stronghold",
+  "hearth instruction preserves its expected bind destination on the step")
 
 -- Reproduce the critical part of the Terokkar "Who Are They?" branch.  The
 -- player must stop on the actual buff objective until the disguise is active;

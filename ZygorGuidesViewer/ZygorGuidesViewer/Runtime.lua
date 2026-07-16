@@ -1,6 +1,6 @@
 local ZGV = ZygorGuidesViewer
 local Runtime = ZGV:RegisterModule("Runtime",{
-  currentGuide=nil,currentStep=1,manual={},killCounts={},collectionBaselines={},talked={},gossiped={},interacted={},discoveries={},autoHistory={},lastAdvance=0,autoAdvanceDelay=0.65,
+  currentGuide=nil,currentStep=1,manual={},arrivals={},killCounts={},collectionBaselines={},talked={},gossiped={},interacted={},discoveries={},autoHistory={},lastAdvance=0,autoAdvanceDelay=0.65,
 })
 
 local function questEntry(id)
@@ -49,6 +49,33 @@ end
 
 function Runtime:ManualKey(stepIndex,goalIndex)
   return (self.currentGuide and self.currentGuide.id or "none")..":"..tostring(stepIndex)..":"..tostring(goalIndex)
+end
+
+function Runtime:ClearStepArrivals(stepIndex,guide)
+  guide=guide or self.currentGuide
+  if not guide or not stepIndex then return end
+  local prefix=tostring(guide.id or "none")..":"..tostring(stepIndex)..":"
+  for key in pairs(self.arrivals or {}) do
+    if key:sub(1,#prefix)==prefix then self.arrivals[key]=nil end
+  end
+end
+
+function Runtime:CompleteArrival(goal,stepIndex,goalIndex,reason)
+  self.arrivals=self.arrivals or {}
+  local key=self:ManualKey(stepIndex,goalIndex)
+  if self.arrivals[key] then return true,"arrival" end
+  local complete=false
+  if reason=="map-transition" and ZGV.Navigation and ZGV.Navigation.IsMapTransitionComplete then
+    complete=ZGV.Navigation:IsMapTransitionComplete(goal.mapTransition)
+  elseif ZGV.Navigation and goal.destination then
+    complete=ZGV.Navigation:IsArrived(goal.destination)
+  end
+  if complete then
+    self.arrivals[key]={time=type(GetTime)=="function" and GetTime() or 0,reason=reason}
+    ZGV:LogInfo("progress","arrival credit for "..key.." at "..tostring(goal.text or goal.destination and goal.destination.mapKey or "waypoint"))
+    return true,"arrival"
+  end
+  return false,reason or "position"
 end
 
 function Runtime:UsesCollectionBaseline(goal)
@@ -135,7 +162,12 @@ end
 -- class/race branches disappear atomically and cannot leave a talk or gossip
 -- objective behind to block the guide.
 function Runtime:IsStepApplicable(step)
-  if not step or not step.onlyIf or step.onlyIf=="" then return true end
+  if not step then return true end
+  if step.hearthDestination and ZGV.Conditions and type(ZGV.Conditions.Bound)=="function" then
+    local matches=ZGV.Conditions:Bound(step.hearthDestination)
+    if matches==false then return false end
+  end
+  if not step.onlyIf or step.onlyIf=="" then return true end
   local result,err=ZGV.Conditions:Evaluate(step.onlyIf,self.currentGuide)
   if err then
     self.currentGuide.conditionIssues=self.currentGuide.conditionIssues or {}
@@ -226,9 +258,9 @@ function Runtime:IsGoalComplete(goal,stepIndex,goalIndex)
   -- such as Terokkar's Shadowy Disguise never reaches its own aura check.
   elseif action=="goto" then
     if goal.mapTransition and ZGV.Navigation and ZGV.Navigation.IsMapTransitionComplete then
-      return ZGV.Navigation:IsMapTransitionComplete(goal.mapTransition),"map-transition"
+      return self:CompleteArrival(goal,stepIndex,goalIndex,"map-transition")
     end
-    if ZGV.Navigation then return ZGV.Navigation:IsArrived(goal.destination),"position" end
+    if ZGV.Navigation then return self:CompleteArrival(goal,stepIndex,goalIndex,"position") end
   elseif action=="skill" or action=="reachskill" then
     return ZGV.Conditions:Skill(goal.skillName)>=(goal.skillRank or 1),"skill"
   elseif action=="skillmax" then
@@ -300,7 +332,7 @@ function Runtime:IsGoalComplete(goal,stepIndex,goalIndex)
     end
     return true,"equipment"
   elseif action=="text" and goal.mapTransition and ZGV.Navigation and ZGV.Navigation.IsMapTransitionComplete then
-    return ZGV.Navigation:IsMapTransitionComplete(goal.mapTransition),"map-transition"
+    return self:CompleteArrival(goal,stepIndex,goalIndex,"map-transition")
   elseif action=="text" or action=="map" or action=="label" or action=="info" or action=="image" or action=="webheader" or action=="webinfo" or action=="webimage" then
     return true,"informational"
   end
@@ -576,6 +608,7 @@ function Runtime:SelectGuide(value,step)
   if not guide then ZGV:Print("Guide not found: "..tostring(value)) return false end
   local parsed,err=ZGV.Parser:ParseGuide(guide)
   if not parsed then ZGV:LogError("guide parse",err) return false end
+  self.arrivals={}
   self.currentGuide=parsed
   local selected=tonumber(step) or self:ResolveStepJump(parsed,0,step) or 1
   self.currentStep=math.max(1,math.min(selected,#parsed.steps))
@@ -618,6 +651,8 @@ function Runtime:SetStep(index,manual,loopGuard)
       return self:SetStep(index,true,true)
     end
   end
+  local previousStep=self.currentStep
+  self:ClearStepArrivals(previousStep)
   self.currentStep=index
   ZGV.db.profile.currentStep=index
   self.lastAdvance=GetTime()
@@ -676,6 +711,7 @@ function Runtime:ResetCurrentGuide()
   if not self.currentGuide then return end
   local prefix=self.currentGuide.id..":"
   for key in pairs(self.manual) do if key:sub(1,#prefix)==prefix then self.manual[key]=nil end end
+  for key in pairs(self.arrivals or {}) do if key:sub(1,#prefix)==prefix then self.arrivals[key]=nil end end
   for key in pairs(self.killCounts) do if key:sub(1,#prefix)==prefix then self.killCounts[key]=nil end end
   for key in pairs(self.collectionBaselines) do if key:sub(1,#prefix)==prefix then self.collectionBaselines[key]=nil end end
   for key in pairs(self.talked) do if key:sub(1,#prefix)==prefix then self.talked[key]=nil end end
@@ -1059,6 +1095,7 @@ function Runtime:OnEvent(event,...)
 end
 
 function Runtime:OnStartup()
+  self.arrivals={}
   self.killCounts=ZGV.db.char.killProgress or self.killCounts or {}
   ZGV.db.char.killProgress=self.killCounts
   self.collectionBaselines=ZGV.db.char.collectionBaselines or self.collectionBaselines or {}
