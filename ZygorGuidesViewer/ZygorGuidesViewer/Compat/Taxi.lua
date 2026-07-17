@@ -204,7 +204,7 @@ function Taxi:GetTaxis()
 	return paths
 end
 Taxi.GetTaxisEnglish = Taxi.GetTaxis
-function Taxi:Startup(saved)
+function Taxi:Startup(saved, options)
 	if type(saved) ~= "table" then return false end
 	for name, value in pairs(saved) do
 		if type(name) == "string" then self:RememberKnownName(name) end
@@ -221,10 +221,12 @@ function Taxi:Startup(saved)
 	-- started.  Notify Navigation now that the learned-node set is usable;
 	-- otherwise an already selected guide keeps the route calculated before
 	-- this cache existed until the next /reload or manual waypoint change.
-	Compat:Fire("TAXI_CACHE_UPDATED", {
-		nodes = {}, byKey = {}, updatedAt = Compat.Now(), available = true,
-		restored = true, revision = self.revision,
-	})
+	if not (type(options) == "table" and options.silent) then
+		Compat:Fire("TAXI_CACHE_UPDATED", {
+			nodes = {}, byKey = {}, updatedAt = Compat.Now(), available = true,
+			restored = true, revision = self.revision,
+		})
+	end
 	return true
 end
 

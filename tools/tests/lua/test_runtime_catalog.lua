@@ -204,6 +204,12 @@ Runtime.currentGuide=curseGuide
 local curseState=Runtime:GetStepState(curseStep,1)
 assertEqual(curseState.complete,false,"unfinished Bladespire buildings block automatic progression")
 assertEqual(curseState.skipped,false,"leaving Bloodmaul does not skip the Bladespire objective")
+local curseTalk,curseTurnIn=curseGuide.steps[2].goals[1],curseGuide.steps[2].goals[2]
+assertEqual(curseTalk.action,"talk","interaction step retains the visible talk instruction")
+assert(curseTalk.destination==curseTurnIn.destination,
+  "a bare talk instruction shares its following hand-in navigation point")
+assertEqual(curseTalk.destination.x,.4497,"talk inherits the hand-in x coordinate")
+assertEqual(curseTalk.destination.y,.723,"talk inherits the hand-in y coordinate")
 log[10544]=nil
 Runtime.currentGuide = { id = "runtime-test", title = "Runtime test", conditionIssues = {} }
 
@@ -319,6 +325,113 @@ assert(Runtime:ActivateGoal(1,2),"manual completion accepts the final path point
 assertEqual(Runtime.currentStep,2,"manual final path completion advances immediately")
 assertEqual(waypointHistory[#waypointHistory].destination.x,.30,"manual final completion points to the next guide step")
 assertEqual(waypointHistory[#waypointHistory].title,"Talk to the quest giver","manual completion rebuilds the next goal title")
+
+-- Item-use goals are fulfilled by the protected item action itself, not by
+-- an item-count change: quest starters can vanish immediately, while masks
+-- and other reusable quest items remain in the bag.  Any path that reports
+-- the item ID must mark the matching active use goal and replan at once.
+Runtime.manual={}
+Runtime.arrivals={}
+Runtime.waypointGoalKey=nil
+local itemUseGuide={id="item-use",title="Item use",conditionIssues={},steps={
+  {goals={{action="use",itemID=31120,text="Use Meeting Note",destination={mapKey="Blade's Edge Mountains/0",x=.40,y=.40}}}},
+  {goals={{action="goto",text="Continue after using the note",destination={mapKey="Blade's Edge Mountains/0",x=.50,y=.50}}}},
+}}
+Runtime.currentGuide=itemUseGuide
+Runtime.currentStep=1
+Runtime.lastAdvance=0
+currentArrivalX=nil
+Runtime:UpdateWaypoint()
+assertEqual(Runtime:RecordItemUse(99999,"test"),false,"unrelated item use cannot complete a guide goal")
+assert(Runtime:RecordItemUse(31120,"test"),"matching item use receives guide credit")
+local usedNote=Runtime:GetStepState(Runtime.currentGuide.steps[1],1)
+assertEqual(usedNote.goals[1].complete,true,"Meeting Note use is marked complete")
+assertEqual(Runtime.currentStep,2,"item use advances immediately to the following step")
+assertEqual(waypointHistory[#waypointHistory].destination.x,.50,"item use immediately updates the waypoint")
+
+-- Reusable quest items must remain actionable until their linked objective
+-- completes.  The Blades Edge Wicked Strong Fetish is used repeatedly to
+-- curse buildings; treating its first click as manual completion removed the
+-- secure action button before the quest objective could finish.
+Runtime.manual={}
+Runtime.arrivals={}
+Runtime.waypointGoalKey=nil
+log[90501]={objectives={{current=1,required=5,finished=false}},complete=false}
+Runtime.currentGuide={id="repeat-item-use",title="Repeat item use",conditionIssues={},steps={
+  {goals={
+    {action="use",itemID=30479,text="Use Wicked Strong Fetish",destination={mapKey="Blade's Edge Mountains/0",x=.42,y=.58}},
+    {action="goal",questID=90501,objective=1,text="Curse 5 buildings",destination={mapKey="Blade's Edge Mountains/0",x=.42,y=.58}},
+  }},
+  {goals={{action="goto",text="Continue after cursing",destination={mapKey="Blade's Edge Mountains/0",x=.50,y=.50}}}},
+}}
+Runtime.currentStep=1
+Runtime.lastAdvance=0
+Runtime:UpdateWaypoint()
+assert(Runtime:RecordItemUse(30479,"test"),"reusable quest item use is recognised")
+assertEqual(Runtime.manual[Runtime:ManualKey(1,1)],nil,"first reusable item use is not manually completed")
+local repeatItemState=Runtime:GetStepState(Runtime.currentGuide.steps[1],1)
+assertEqual(repeatItemState.goals[1].complete,false,"reusable item remains incomplete while its quest objective is partial")
+assertEqual(Runtime:GetDisplayGoals(1)[1].state.complete,false,"reusable item remains eligible for the quest action bar")
+assertEqual(Runtime.currentStep,1,"partial reusable item use does not advance the guide")
+log[90501].objectives[1].current=5
+log[90501].objectives[1].finished=true
+repeatItemState=Runtime:GetStepState(Runtime.currentGuide.steps[1],1)
+assertEqual(repeatItemState.goals[1].complete,true,"completed quest objective finishes the reusable item instruction")
+Runtime:Tick(true)
+assertEqual(Runtime.currentStep,2,"completed reusable item objective advances the guide")
+log[90501]=nil
+
+-- A consumable can have already disappeared from its bag slot by the time
+-- UseContainerItem's safe post-hook runs. ITEM_LOCKED supplies the pre-use
+-- identity so clicking that same item directly in the bag still completes it.
+Runtime.manual={}
+Runtime.currentGuide=itemUseGuide
+Runtime.currentStep=1
+Runtime.waypointGoalKey=nil
+local lockedItemID=31120
+ZGV.Compat.Container={GetItemID=function() return lockedItemID end}
+Runtime:RememberItemLock(0,1)
+lockedItemID=nil
+assert(Runtime:RecordContainerItemUse(0,1),"bag use retains a consumable item's pre-use identity")
+assertEqual(Runtime.currentStep,2,"bag item use advances without waiting for BAG_UPDATE")
+ZGV.Compat.Container=nil
+
+Runtime.manual={}
+Runtime.currentStep=1
+Runtime.waypointGoalKey=nil
+local usedByGuideAction=0
+ZGV.Inventory={UseItem=function(_,itemID)
+  assertEqual(itemID,31120,"guide action uses its authored item")
+  usedByGuideAction=usedByGuideAction+1
+  return true,"used"
+end}
+assert(Runtime:ActivateGoal(1,1),"guide item action completes after the protected use succeeds")
+assertEqual(usedByGuideAction,1,"guide item action invokes the inventory use path once")
+assertEqual(Runtime.currentStep,2,"guide item action advances without waiting for a timer")
+ZGV.Inventory=nil
+
+-- TRAINER_SHOW is the reliable confirmation that a class trainer was opened.
+-- On build 12340 the target GUID can already be cleared at that point, so a
+-- trainer instruction must not require a second target lookup to receive
+-- credit or advance the guide.
+Runtime.manual={}
+Runtime.interacted={}
+Runtime.currentGuide={id="trainer-visit",title="Trainer visit",conditionIssues={},steps={
+  {goals={{action="trainer",npcID=2126,text="Train Abilities",destination={mapKey="Tirisfal Glades/0",x=.3091,y=.6634}}}},
+  {goals={{action="goto",text="Continue after training",destination={mapKey="Tirisfal Glades/0",x=.32,y=.66}}}},
+}}
+Runtime.currentStep=1
+Runtime.lastAdvance=0
+local originalUnitGUID=UnitGUID
+UnitGUID=function() return nil end
+time=function() return 0 end
+Runtime:OnEvent("TRAINER_SHOW")
+local trained=Runtime:GetStepState(Runtime.currentGuide.steps[1],1)
+assertEqual(trained.goals[1].complete,true,"opening a trainer credits the active trainer goal without a target GUID")
+assertEqual(Runtime.interacted[Runtime:ManualKey(1,1)].event,"TRAINER_SHOW","trainer credit records the trainer-window event")
+Runtime:Tick(true)
+assertEqual(Runtime.currentStep,2,"trainer visit advances to the following guide step")
+UnitGUID=originalUnitGUID
 ZGV.Navigation={
   IsArrived=function() return false end,
   IsMapTransitionComplete=function(_,transition)

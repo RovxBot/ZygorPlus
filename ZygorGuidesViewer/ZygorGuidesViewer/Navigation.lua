@@ -150,7 +150,21 @@ function Navigation:GetTransportArrivalIndex(player)
   for index=self.routeIndex or 1,#self.route.path do
     local entry=self.route.path[index]
     if entry and entry.node and entry.node.mapKey==player.key and transportModes[entry.mode] then
-      return index
+      -- A same-zone flight has the same map key before and after boarding.
+      -- Treating its destination as an arrival while the player is still at
+      -- the departure flight master forces FindRoute on every arrow update.
+      -- Only a transport that crosses from a different preceding map can be
+      -- completed solely from the current map identity; same-zone legs use
+      -- their normal destination-arrival check after the flight lands.
+      local previousMap=self.route.from
+      for previous=index-1,self.routeIndex or 1,-1 do
+        local prior=self.route.path[previous]
+        if prior and prior.node and prior.node.mapKey then
+          previousMap=prior.node.mapKey
+          break
+        end
+      end
+      if previousMap and previousMap~=entry.node.mapKey then return index end
     end
   end
   return nil
@@ -1046,7 +1060,22 @@ function Navigation:FindRoute(from,to)
   -- are graph-only and deliberately omitted from the player-facing route.
   local taxiByMap,taxiSources={},{}
   local taxi=ZGV.Compat and ZGV.Compat.Taxi
-  if player.key~=to.key and navigationOption("useTaxi") and taxi and type(taxi.GetKnownStaticNodes)=="function" then
+  -- Code-TBC's InitialFlightPaths facade normally restores this cache at
+  -- ZGV_STARTED.  Navigation must not rely on that optional facade, though:
+  -- a route can be rebuilt during login, after a module reload, or by another
+  -- consumer before that callback runs.  Bind the profile-owned table here so
+  -- every guide gets the character's learned flight network.  This repair is
+  -- intentionally silent because FindRoute may be running from the taxi-cache
+  -- notification itself.
+  local savedTaxi=ZGV.db and ZGV.db.profile and ZGV.db.profile.navigation and ZGV.db.profile.navigation.knownTaxi
+  if taxi and type(savedTaxi)=="table" and taxi.saved~=savedTaxi and type(taxi.Startup)=="function" then
+    taxi:Startup(savedTaxi,{silent=true})
+  end
+  -- Flight masters can also save time inside one large zone.  Keep the
+  -- ordinary same-map START→FINISH edge below, then let Dijkstra compare it
+  -- with the learned flight network instead of excluding taxis solely because
+  -- the two coordinates share a map key.
+  if navigationOption("useTaxi") and taxi and type(taxi.GetKnownStaticNodes)=="function" then
     local function taxiContinent(mapKey)
       local record=ZGV.Compat.Map:Resolve(mapKey)
       local legacy=record and (record.legacy or record)
@@ -1197,6 +1226,14 @@ function Navigation:OnStartup()
     hooksecurefunc("WorldMapFrame_Update",function() Navigation:UpdateMapPin() end)
   end
   if ZGV.Compat and ZGV.Compat.On then ZGV.Compat:On("TAXI_CACHE_UPDATED",self,"OnTaxiCache") end
+  -- Bind after subscribing so an active restored guide is immediately
+  -- replanned with its learned flight points, even when the legacy facade did
+  -- not run (for example after a partial addon reload).
+  local taxi=ZGV.Compat and ZGV.Compat.Taxi
+  local savedTaxi=ZGV.db and ZGV.db.profile and ZGV.db.profile.navigation and ZGV.db.profile.navigation.knownTaxi
+  if taxi and type(savedTaxi)=="table" and taxi.saved~=savedTaxi and type(taxi.Startup)=="function" then
+    taxi:Startup(savedTaxi)
+  end
   if ZGV.Compat and ZGV.Compat.Timer then
     self.ticker=ZGV.Compat.Timer:NewTicker(.1,function()
       if Navigation.waypoint then

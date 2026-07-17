@@ -12,6 +12,7 @@ local continents={
   ["Elwynn Forest/0"]=2,["Stormwind City/0"]=2,
   ["Borean Tundra/0"]=4,["Dragonblight/0"]=4,["Unlinked Zone/0"]=1,["Remote Zone/0"]=1,
   ["Nagrand/0"]=3,["Zangarmarsh/0"]=3,["Blade's Edge Mountains/0"]=3,
+  ["The Barrens/0"]=1,
 }
 function map:Resolve(key)
   if type(key) == "table" then return key end
@@ -31,9 +32,17 @@ local taxiNodes={
   {key="wyrmrest",mapKey="Dragonblight/0",name="Wyrmrest Temple",title="Wyrmrest Temple Flight Master",x=.60,y=.55},
   {key="garadar",mapKey="Nagrand/0",name="Garadar",title="Garadar Flight Master",x=.5719,y=.3525},
   {key="zabrajin",mapKey="Zangarmarsh/0",name="Zabra'jin",title="Zabra'jin Flight Master",x=.3307,y=.5107},
+  {key="thunderlord",mapKey="Blade's Edge Mountains/0",name="Thunderlord Stronghold",title="Thunderlord Flight Master",x=.5205,y=.5413},
+  {key="moknathal",mapKey="Blade's Edge Mountains/0",name="Mok'Nathal Village",title="Mok'Nathal Flight Master",x=.7637,y=.6593},
+  {key="crossroads",mapKey="The Barrens/0",name="The Crossroads",title="Crossroads Flight Master",x=.515,y=.303},
+  {key="taurajo",mapKey="The Barrens/0",name="Camp Taurajo",title="Camp Taurajo Flight Master",x=.445,y=.592},
+  {key="unupe",mapKey="Borean Tundra/0",name="Unu'pe",title="Unu'pe Flight Master",x=.785,y=.515},
 }
 Compat.Map=map
-Compat.Taxi={GetKnownStaticNodes=function() return taxiNodes end}
+Compat.Taxi={
+  GetKnownStaticNodes=function() return taxiNodes end,
+  Startup=function(self,saved) self.saved=saved return true end,
+}
 
 ZygorGuidesViewer={
   Compat=Compat,
@@ -86,6 +95,8 @@ local Navigation=assert(ZGV.Navigation,"navigation module did not load")
 -- explicit actions expected by the arrow: reach the flight master, then fly.
 player={key="Terokkar Forest/0",valid=true,x=.59,y=.55}
 local route=assert(Navigation:FindRoute(nil,{key="Shattrath City/0",x=.60,y=.42,title="Shattrath objective"}),"known taxi route was not found")
+local crossZoneTaxiRoute=route
+assertEqual(Compat.Taxi.saved,ZGV.db.profile.navigation.knownTaxi,"route planning restores the saved taxi cache before selecting a route")
 assertEqual(#route.path,2,"taxi route vertex count")
 assertEqual(route.path[1].mode,"walk","taxi route starts by walking to the flight master")
 assertEqual(route.path[2].mode,"taxi","taxi route includes a flight action")
@@ -134,6 +145,39 @@ assertEqual(route.path[1].node.title,"Garadar Flight Master","Nagrand route star
 assertEqual(route.path[1].mode,"walk","player is directed to Garadar")
 assertEqual(route.path[2].node.title,"Zabra'jin Flight Master","Nagrand route selects Zabra'jin")
 assertEqual(route.path[2].mode,"taxi","Garadar to Zabra'jin is a flight leg")
+
+-- Same-zone flights are map-agnostic.  Exercise a long leg in each world
+-- region so this cannot become a Blade's Edge-only exception.  The planner
+-- must compare the usual direct route with its learned taxi network and use
+-- the latter only when it is quicker.
+local sameZoneFlightCases={
+  {mapKey="The Barrens/0",fromX=.515,fromY=.303,toX=.445,toY=.592,from="Crossroads Flight Master",to="Camp Taurajo Flight Master"},
+  {mapKey="Blade's Edge Mountains/0",fromX=.5205,fromY=.5413,toX=.7637,toY=.6593,from="Thunderlord Flight Master",to="Mok'Nathal Flight Master"},
+  {mapKey="Borean Tundra/0",fromX=.58,fromY=.68,toX=.785,toY=.515,from="Valiance Keep Flight Master",to="Unu'pe Flight Master"},
+}
+for _,case in ipairs(sameZoneFlightCases) do
+  player={key=case.mapKey,valid=true,x=case.fromX+.01,y=case.fromY+.01}
+  route=assert(Navigation:FindRoute(nil,{key=case.mapKey,x=case.toX,y=case.toY,title="same-zone objective"}),"same-zone flight route was not found for "..case.mapKey)
+  assertEqual(route.path[1].node.title,case.from,"same-zone route starts at the nearest flight master for "..case.mapKey)
+  assertEqual(route.path[1].mode,"walk","same-zone route walks to the departure flight master for "..case.mapKey)
+  assertEqual(route.path[2].node.title,case.to,"same-zone route chooses the destination flight master for "..case.mapKey)
+  assertEqual(route.path[2].mode,"taxi","same-zone long-distance route recommends the flight for "..case.mapKey)
+end
+
+-- A same-zone taxi's destination shares the current map key, but it has not
+-- been reached until the flight ends.  Replanning it on every arrow update
+-- caused a continuous route-build loop and severe frame-rate drops.
+Navigation.route=route
+Navigation.routeIndex=1
+Navigation.waypoint={key="Borean Tundra/0",mapKey="Borean Tundra/0",x=.785,y=.515,title="same-zone objective"}
+assertEqual(Navigation:GetTransportArrivalIndex(player),nil,"same-zone taxi is not mistaken for an arrived transport")
+
+-- Cross-zone flights still replan as soon as the client reports arrival on
+-- the new map, avoiding a stale source-zone route after a taxi flight.
+Navigation.route=crossZoneTaxiRoute
+Navigation.routeIndex=1
+player={key="Shattrath City/0",valid=true,x=.60,y=.42}
+assertEqual(Navigation:GetTransportArrivalIndex(player),2,"cross-zone taxi arrival replans from the destination map")
 
 -- A taxi-cache revision must invalidate an otherwise unchanged Runtime
 -- waypoint.  This is the automatic refresh that previously required /reload.

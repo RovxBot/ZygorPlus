@@ -218,7 +218,9 @@ function ActionBar:Create()
     -- viewer update an unprotected guide action after the hardware click.
     button:SetScript("PostClick",function(self)
       local action=self.action
-      if action and not self.secure then
+      if action and action.kind=="item" and action.entry then
+        ZGV.Runtime:RecordItemUse(action.identity,"zygor-action-bar")
+      elseif action and not self.secure then
         if action.kind=="trash" and ZGV.Inventory then ZGV.Inventory:SellGreys()
         elseif action.entry then ZGV.Runtime:ActivateGoal(action.entry.stepIndex,action.entry.goalIndex) end
       end
