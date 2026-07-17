@@ -36,6 +36,29 @@ local function itemCount(id)
   return ZGV.Conditions and ZGV.Conditions:ItemCount(id,true) or 0
 end
 
+local function isItemUseGoal(goal)
+  return goal and goal.itemID and (goal.action=="use" or (goal.modifiers and goal.modifiers.useItem))
+end
+
+-- A reusable quest item often sits beside the one quest objective that
+-- counts its repeated uses (for example, curse several buildings with one
+-- fetish).  GetStepState already joins those companion actions to that
+-- objective once it is finished.  Do not manually complete the item on its
+-- first click or the secure action button disappears before the objective is
+-- done.  A direct item-use goal without that quest-progress contract still
+-- receives immediate credit.
+function Runtime:ItemUseTracksQuestProgress(step,goal)
+  if goal and goal.questID and goal.objective then return true end
+  local objectives=0
+  for _,candidate in ipairs((step and step.goals) or {}) do
+    if candidate.questID and candidate.objective then
+      objectives=objectives+1
+      if objectives>1 then return false end
+    end
+  end
+  return objectives==1
+end
+
 local function questObjective(goal)
   if not goal or not goal.questID then return nil end
   local entry=questEntry(goal.questID)
@@ -721,6 +744,73 @@ function Runtime:ResetCurrentGuide()
   self:SetStep(1,true)
 end
 
+-- A secure item button is deliberately owned by Blizzard's protected click
+-- handler, so its successful use never passes through ActivateGoal.  Record
+-- the interaction here instead, regardless of whether it came from a bag,
+-- the normal action bar, or Zygor's secure action bar.  Matching by item ID
+-- keeps this scoped to the active guide's authored `use` instructions.
+function Runtime:RecordItemUse(itemID,source)
+  itemID=tonumber(itemID)
+  local guide=self.currentGuide
+  if not itemID or not guide then return false end
+  local changed,matched=false,false
+  for _,entry in ipairs(self:GetActiveSteps()) do
+    for goalIndex,goal in ipairs(entry.step.goals) do
+      if isItemUseGoal(goal) and tonumber(goal.itemID)==itemID and self:IsGoalApplicable(goal) then
+        matched=true
+        if not self:ItemUseTracksQuestProgress(entry.step,goal) then
+          local key=self:ManualKey(entry.index,goalIndex)
+          if not self.manual[key] then
+            self.manual[key]={source=source or "item-use",itemID=itemID,time=GetTime()}
+            changed=true
+          end
+        end
+      end
+    end
+  end
+  if not changed then return matched end
+  self.autoAdvanceBlocked=nil
+  ZGV:LogInfo("progress","item-use credit for item "..tostring(itemID).." via "..tostring(source or "unknown"))
+  ZGV:Fire("ZGV_GOAL_UPDATED",guide,self.currentStep)
+  local step=guide.steps[self.currentStep]
+  if step and self:GetStepState(step,self.currentStep).complete then
+    self:NextStep(true)
+  else
+    self:UpdateWaypoint()
+  end
+  return true
+end
+
+-- ITEM_LOCKED is raised while a bag item's pre-use identity is still
+-- available.  Keep it briefly because a consumable can disappear before the
+-- post-use hook below gets to inspect its slot.
+function Runtime:RememberItemLock(bag,slot)
+  if bag==nil or slot==nil then return end
+  local container=ZGV.Compat and ZGV.Compat.Container
+  local itemID=container and container.GetItemID and container:GetItemID(bag,slot)
+  if not itemID then return end
+  self.itemLocks=self.itemLocks or {}
+  self.itemLocks[tostring(bag)..":"..tostring(slot)]={itemID=tonumber(itemID),time=GetTime()}
+end
+
+function Runtime:RecordContainerItemUse(bag,slot)
+  if bag==nil or slot==nil then return false end
+  local key=tostring(bag)..":"..tostring(slot)
+  local container=ZGV.Compat and ZGV.Compat.Container
+  local itemID=container and container.GetItemID and container:GetItemID(bag,slot)
+  local locked=self.itemLocks and self.itemLocks[key]
+  if self.itemLocks then self.itemLocks[key]=nil end
+  if not itemID and locked and GetTime()-locked.time<=5 then itemID=locked.itemID end
+  return self:RecordItemUse(itemID,"bag")
+end
+
+function Runtime:RecordActionUse(slot)
+  if type(GetActionInfo)~="function" then return false end
+  local action,itemID=GetActionInfo(slot)
+  if action~="item" then return false end
+  return self:RecordItemUse(itemID,"action-bar")
+end
+
 function Runtime:ActivateGoal(stepIndex,goalIndex)
   local guide=self.currentGuide
   local step=guide and guide.steps[stepIndex]
@@ -733,9 +823,12 @@ function Runtime:ActivateGoal(stepIndex,goalIndex)
     local destination=self:ResolveStepJump(guide,stepIndex,goal.nextJump or goal.nextLabel)
     if destination then return self:SetStep(destination,true) end
   end
-  if goal.itemID and (goal.action=="use" or goal.modifiers.useItem) and ZGV.Inventory then
+  if isItemUseGoal(goal) and ZGV.Inventory then
     local used=ZGV.Inventory:UseItem(goal.itemID)
-    if used then return true end
+    -- The bag-use hook normally records this before Inventory:UseItem
+    -- returns.  Calling the matcher again also covers clients where that
+    -- event is delayed, and is harmless after the first credit.
+    if used then return self:RecordItemUse(goal.itemID,"guide-action") or true end
   end
   self.manual[self:ManualKey(stepIndex,goalIndex)]=true
   ZGV:Fire("ZGV_GOAL_UPDATED",guide,stepIndex,goalIndex)
@@ -897,7 +990,6 @@ function Runtime:RecordTalk(event)
   -- opening.  Mouseover is a useful fallback for click-to-interact users.
   local npcID=npcIDFromGUID(UnitGUID and UnitGUID("target"))
     or npcIDFromGUID(UnitGUID and UnitGUID("mouseover"))
-  if not npcID then return end
   local changed=false
   for _,entry in ipairs(self:GetActiveSteps()) do
     for goalIndex,goal in ipairs(entry.step.goals) do
@@ -908,7 +1000,14 @@ function Runtime:RecordTalk(event)
           changed=true
         end
       end
-      if (goal.action=="vendor" or goal.action=="trainer") and tonumber(goal.npcID)==npcID and self:IsGoalApplicable(goal) then
+      -- TRAINER_SHOW is emitted only after the player opens a trainer window.
+      -- Build 12340 can clear the selected NPC before that event reaches an
+      -- addon, which made class-training steps depend on an unavailable GUID.
+      -- The active guide's trainer instruction is enough context to credit
+      -- the visit; vendor interactions still require an exact NPC match.
+      local trainerVisit=goal.action=="trainer" and event=="TRAINER_SHOW"
+      local matchedNpc=npcID and tonumber(goal.npcID)==npcID
+      if (trainerVisit or (goal.action=="vendor" and matchedNpc)) and self:IsGoalApplicable(goal) then
         local key=self:ManualKey(entry.index,goalIndex)
         if not self.interacted[key] then
           self.interacted[key]={npcID=npcID,event=event,time=time()}
@@ -919,7 +1018,7 @@ function Runtime:RecordTalk(event)
   end
   if changed then
     self.autoAdvanceBlocked=nil
-    ZGV:LogInfo("progress","talk credit for npc "..tostring(npcID).." via "..tostring(event))
+    ZGV:LogInfo("progress","talk credit for npc "..tostring(npcID or "trainer").." via "..tostring(event))
     ZGV:Fire("ZGV_GOAL_UPDATED",guide,self.currentStep)
   end
 end
@@ -1072,6 +1171,7 @@ function Runtime:OnEvent(event,...)
   if not self.currentGuide then return end
   local unit=...
   if event=="COMBAT_LOG_EVENT_UNFILTERED" then self:RecordKillFromCombatLog(...) end
+  if event=="ITEM_LOCKED" then self:RememberItemLock(...) end
   if event=="GOSSIP_SHOW" or event=="QUEST_GREETING" or event=="QUEST_DETAIL"
     or event=="QUEST_PROGRESS" or event=="QUEST_COMPLETE" or event=="MERCHANT_SHOW"
     or event=="TRAINER_SHOW" or event=="TAXIMAP_OPENED" then
@@ -1116,6 +1216,15 @@ function Runtime:OnStartup()
     hooksecurefunc("GetQuestReward",function() Runtime:RecordTurnIn(nil,nil,"GetQuestReward") end)
     self.rewardHooked=true
   end
+  if not self.itemUseHooked and type(hooksecurefunc)=="function" then
+    if type(UseContainerItem)=="function" then
+      hooksecurefunc("UseContainerItem",function(bag,slot) Runtime:RecordContainerItemUse(bag,slot) end)
+    end
+    if type(UseAction)=="function" then
+      hooksecurefunc("UseAction",function(slot) Runtime:RecordActionUse(slot) end)
+    end
+    self.itemUseHooked=true
+  end
   local quest=ZGV.Compat and ZGV.Compat.Quest
   if quest then quest:RefreshLog() quest:RefreshCompleted(false) end
   local saved=ZGV.db.profile.currentGuide
@@ -1132,7 +1241,7 @@ function Runtime:OnStartup()
   end
 end
 
-for _,event in ipairs({"QUEST_LOG_UPDATE","BAG_UPDATE","PLAYER_LEVEL_UP","UNIT_INVENTORY_CHANGED","ACHIEVEMENT_EARNED","UNIT_AURA","PLAYER_DEAD","PLAYER_UNGHOST","COMBAT_LOG_EVENT_UNFILTERED","GOSSIP_SHOW","QUEST_GREETING","QUEST_DETAIL","QUEST_PROGRESS","QUEST_COMPLETE","QUEST_FINISHED","MERCHANT_SHOW","TRAINER_SHOW","TAXIMAP_OPENED","UI_INFO_MESSAGE","SKILL_LINES_CHANGED","TRADE_SKILL_UPDATE"}) do
+for _,event in ipairs({"QUEST_LOG_UPDATE","BAG_UPDATE","ITEM_LOCKED","PLAYER_LEVEL_UP","UNIT_INVENTORY_CHANGED","ACHIEVEMENT_EARNED","UNIT_AURA","PLAYER_DEAD","PLAYER_UNGHOST","COMBAT_LOG_EVENT_UNFILTERED","GOSSIP_SHOW","QUEST_GREETING","QUEST_DETAIL","QUEST_PROGRESS","QUEST_COMPLETE","QUEST_FINISHED","MERCHANT_SHOW","TRAINER_SHOW","TAXIMAP_OPENED","UI_INFO_MESSAGE","SKILL_LINES_CHANGED","TRADE_SKILL_UPDATE"}) do
   ZGV:RegisterEvent(event,Runtime,"OnEvent")
 end
 

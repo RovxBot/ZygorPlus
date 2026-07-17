@@ -1354,6 +1354,37 @@ function Parser:_ParseGuide(guide, stack)
             goal.npcID=goal.npcID or lastGoal.npcID
             goal.destination=goal.destination or lastGoal.destination
           end
+          -- Imported guides frequently describe the NPC interaction as a
+          -- bare `talk` row, then put the coordinate on the immediately
+          -- following accept/turn-in row.  They are one interaction at one
+          -- NPC, not two navigation stops.  Give the talk (and any intervening
+          -- gossip choice) that same destination so navigation continues from
+          -- path points to the instruction the player is actually reading.
+          -- An explicit hand-in coordinate is authoritative; otherwise an
+          -- explicitly located talk row supplies the shared location.
+          if (goal.action=="accept" or goal.action=="turnin") and current then
+            local interactionGoals={}
+            local index=#current.goals
+            while index>=1 do
+              local previous=current.goals[index]
+              if previous.action=="gossip" then
+                interactionGoals[#interactionGoals+1]=previous
+              elseif previous.action=="talk" and not previous.questID then
+                interactionGoals[#interactionGoals+1]=previous
+                local destination=goal.destination or previous.destination
+                if destination then
+                  goal.destination=destination
+                  for _,interactionGoal in ipairs(interactionGoals) do
+                    interactionGoal.destination=destination
+                  end
+                end
+                break
+              else
+                break
+              end
+              index=index-1
+            end
+          end
           if hadAsterisk then goal.showInBrief=true; goal.showinbrief=true end
           if #indent>0 then goal.indent=#indent end
           addGoal(goal,mods)
