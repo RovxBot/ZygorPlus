@@ -134,6 +134,7 @@ class RootRuntimeContractTests(unittest.TestCase):
 
     def test_secure_action_bar_preserves_blizzards_click_handler(self) -> None:
         action_bar = source(self.closure, "ModernActionBar.lua")
+        automation = source(self.closure, "Automation.lua")
         self.assertIn('attributes.type="pet"; attributes.action=slot', action_bar)
         self.assertIn('button:SetScript("PostClick"', action_bar)
         self.assertNotIn('button:SetScript("OnClick"', action_bar)
@@ -141,6 +142,9 @@ class RootRuntimeContractTests(unittest.TestCase):
         self.assertIn('RegisterStateDriver(frame,"visibility","[combat] hide; show")', action_bar)
         self.assertIn('retryOutOfCombat("refresh"', action_bar)
         self.assertNotIn("config.hideInCombat and InCombatLockdown()", action_bar)
+        self.assertNotIn('CreateSecureActionButton("ZygorGuidesViewerActionButton"', automation)
+        self.assertNotIn('SetPoint("CENTER",UIParent,"CENTER",0,-180)', automation)
+        self.assertIn('return ZGV.ActionBar:Refresh()', automation)
 
     def test_guide_menu_uses_the_classic_grouped_options_layout(self) -> None:
         menu = source(self.closure, "ModernGuideMenu.lua")

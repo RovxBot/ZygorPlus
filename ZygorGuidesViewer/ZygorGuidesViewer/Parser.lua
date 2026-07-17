@@ -762,6 +762,11 @@ function Parser:ParseGoal(base, mods, inheritedMap)
     text=action=="text" and displayText(content) or actionText(action,displayBody,count),
     target=name, targetID=id, sourceBody=actionBody,
   }
+  -- Authored hearth steps often use a separate `use Hearthstone` goal plus a
+  -- prose/condition line. Preserve the named destination so Runtime can
+  -- compare it with the live GetBindLocation result before offering the item.
+  local hearthDestination=content:match("^[Hh]earth%s+to%s+(.+)$")
+  if hearthDestination then goal.hearthDestination=displayText(hearthDestination) end
 
   if QUEST_ACTIONS[action] then
     goal.questID=id
@@ -1115,6 +1120,7 @@ function Parser:_ParseGuide(guide, stack)
     goal.num=#current.goals+1
     current.goals[#current.goals+1]=goal
     lastGoal=goal
+    if goal.hearthDestination then current.hearthDestination=goal.hearthDestination end
     if goal.questID then
       if goal.daily then
         ZGV.dailyQuests=ZGV.dailyQuests or {}
@@ -1301,12 +1307,24 @@ function Parser:_ParseGuide(guide, stack)
           -- A leading pipe makes a standalone modifier a step modifier.  This
           -- is the old parser's chunk-count behaviour and is vital for the
           -- legacy Wrath packs' standalone "only Race" lines.
-          current.onlyIf=addCondition(current.onlyIf,mods.onlyIf)
-          current.stickyIf=addCondition(current.stickyIf,mods.stickyIf)
+          -- `|nohearth |only if ...` is different: the condition scopes the
+          -- travel restriction, not the quest goal or the whole step.  If it
+          -- leaks into either applicability check, leaving the named subzone
+          -- can skip an unfinished objective (notably the Bladespire half of
+          -- A Curse Upon Both of Your Clans) and jump directly to turn-in.
+          local travelOnly=mods.noHearth and true or false
+          if not travelOnly then
+            current.onlyIf=addCondition(current.onlyIf,mods.onlyIf)
+            current.stickyIf=addCondition(current.stickyIf,mods.stickyIf)
+          end
           if mods.delay then current.delay=mods.delay end
-          if mods.noHearth then current.travelConfig=current.travelConfig or {}; current.travelConfig.use_hearth=false end
+          if mods.noHearth then
+            current.travelConfig=current.travelConfig or {}
+            current.travelConfig.use_hearth=false
+            current.travelConfig.noHearthIf=mods.onlyIf
+          end
           addMarkers(mods)
-          if lastGoal then
+          if lastGoal and not travelOnly then
             applyModifiers(lastGoal,mods)
             if lastGoal.questID then
               if lastGoal.daily then ZGV.dailyQuests=ZGV.dailyQuests or {}; ZGV.dailyQuests[lastGoal.questID]=true end

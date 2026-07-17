@@ -34,17 +34,15 @@ jobs:
           sudo apt-get install --yes lua5.1
           sudo ln -sf "$(command -v lua5.1)" /usr/local/bin/lua
 
-      - name: Verify release metadata and tag availability
+      - name: Select the next release version
         id: release_metadata
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          VERSION="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8"))["version"])')"
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "tools/release.json must contain an X.Y.Z release version; found '$VERSION'." >&2
-            exit 1
-          fi
+          BASE_VERSION="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8"))["version"])')"
+          RELEASE_VERSION="$(git ls-remote --tags --refs origin | python3 tools/next_release_version.py --base-version "$BASE_VERSION")"
+          PACKAGE_NAME="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8"))["name"])')"
           RELEASE_CHANNEL="$(python3 -c 'import json; print(json.load(open("tools/release.json", encoding="utf-8")).get("release_channel", "stable"))')"
           case "$RELEASE_CHANNEL" in
             alpha|stable) ;;
@@ -53,17 +51,20 @@ jobs:
               exit 1
               ;;
           esac
-          RELEASE_TAG="v$VERSION"
+          RELEASE_TAG="v$RELEASE_VERSION"
           if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null; then
-            echo "The tag $RELEASE_TAG already exists." >&2
+            echo "The selected tag $RELEASE_TAG already exists; retry the workflow to select a newer patch." >&2
             exit 1
           fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "A GitHub release already exists for $RELEASE_TAG." >&2
             exit 1
           fi
+          printf 'RELEASE_VERSION=%s\n' "$RELEASE_VERSION" >> "$GITHUB_ENV"
           printf 'RELEASE_TAG=%s\n' "$RELEASE_TAG" >> "$GITHUB_ENV"
           printf 'RELEASE_CHANNEL=%s\n' "$RELEASE_CHANNEL" >> "$GITHUB_ENV"
+          printf 'RELEASE_ARCHIVE=tools/dist/%s-%s.zip\n' "$PACKAGE_NAME" "$RELEASE_VERSION" >> "$GITHUB_ENV"
+          printf 'release_version=%s\n' "$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           printf 'release_tag=%s\n' "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           printf 'release_channel=%s\n' "$RELEASE_CHANNEL" >> "$GITHUB_OUTPUT"
 
@@ -86,7 +87,7 @@ jobs:
           fi
 
       - name: Create deterministic release archive
-        run: python3 tools/package_release.py
+        run: python3 tools/package_release.py --output "$RELEASE_ARCHIVE"
 
       - name: Upload release files
         uses: actions/upload-artifact@v4

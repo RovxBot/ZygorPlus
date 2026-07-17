@@ -134,21 +134,17 @@ function Automation:ExecuteBundledScript(goal)
 end
 
 function Automation:ConfigureActionButton(goal)
-  if not self.actionButton then return end
-  local attributes={type=nil,item=nil,macrotext=nil}
-  if goal and goal.itemID then attributes.type="item" attributes.item="item:"..goal.itemID
-  elseif goal and goal.script and goal.script:match("VehicleExit") then attributes.type="macro" attributes.macrotext="/leavevehicle" end
-  ZGV.Compat.UI:RunOutOfCombat("zygor-action-button",function()
-    Automation.actionButton:SetAttribute("type",attributes.type)
-    Automation.actionButton:SetAttribute("item",attributes.item)
-    Automation.actionButton:SetAttribute("macrotext",attributes.macrotext)
-    if attributes.type then Automation.actionButton:Show() else Automation.actionButton:Hide() end
-  end)
+  -- ModernActionBar owns the one authoritative secure quest-action surface.
+  -- The old automation button duplicated item actions at UIParent center and
+  -- displayed the complete actionbar sprite sheet as a striped square.
+  if ZGV.ActionBar and type(ZGV.ActionBar.Refresh)=="function" then
+    return ZGV.ActionBar:Refresh()
+  end
+  return false,"actionbar-unavailable"
 end
 
 function Automation:RefreshActionButton()
-  local goal=self:FindGoal()
-  self:ConfigureActionButton(goal)
+  return self:ConfigureActionButton(self:FindGoal())
 end
 
 function Automation:CaptureAbandon()
@@ -178,16 +174,6 @@ end
 
 function Automation:OnStartup()
   self.abandoned=ZGV.db.char.abandoned or {}
-  self.actionButton=ZGV.Compat.UI:CreateSecureActionButton("ZygorGuidesViewerActionButton",UIParent)
-  if self.actionButton then
-    self.actionButton:SetWidth(36) self.actionButton:SetHeight(36)
-    self.actionButton:SetPoint("CENTER",UIParent,"CENTER",0,-180)
-    local texture=self.actionButton:CreateTexture(nil,"ARTWORK")
-    texture:SetAllPoints(self.actionButton)
-    texture:SetTexture(ZGV.SKINDIR.."actionbar.tga")
-    self.actionButton.texture=texture
-    self.actionButton:Hide()
-  end
   if type(hooksecurefunc)=="function" and type(SetAbandonQuest)=="function" then
     hooksecurefunc("SetAbandonQuest",function() Automation:CaptureAbandon() end)
   end
@@ -196,8 +182,8 @@ function Automation:OnStartup()
     -- after the confirmed AbandonQuest call, so cancelling the dialog is safe.
     hooksecurefunc("AbandonQuest",function() Automation:ConfirmAbandon() end)
   end
-  ZGV:RegisterCallback("ZGV_STEP_CHANGED",self,"RefreshActionButton")
-  ZGV:RegisterCallback("ZGV_GUIDE_CHANGED",self,"RefreshActionButton")
+  -- ModernActionBar registers the guide/step callbacks. Keeping a second set
+  -- here would rebuild the same protected buttons twice for every change.
   self:RefreshActionButton()
 end
 
